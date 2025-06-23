@@ -14,16 +14,16 @@ export interface TestPrompt {
 
 export const classifyBusiness = async (businessName: string, websiteUrl: string): Promise<BusinessClassification> => {
   // In production, this would use actual LLM APIs
-  // For now, we'll simulate intelligent classification
+  // For now, we'll simulate more intelligent classification
   
   // Extract geography hints from URL or business name
   const geoHints = extractGeographyHints(businessName, websiteUrl);
   
-  // Simulate LLM analysis
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  // Simulate LLM analysis with longer delay for more realistic processing
+  await new Promise(resolve => setTimeout(resolve, 2000));
   
-  // Mock classification based on business name patterns
-  const classification = simulateClassification(businessName, websiteUrl);
+  // Use more sophisticated business classification
+  const classification = performBusinessClassification(businessName, websiteUrl);
   
   return {
     ...classification,
@@ -33,10 +33,10 @@ export const classifyBusiness = async (businessName: string, websiteUrl: string)
 
 const extractGeographyHints = (businessName: string, websiteUrl: string): string => {
   const geoKeywords = {
-    'US': ['.com', 'america', 'usa', 'united states', 'california', 'new york', 'texas'],
-    'UK': ['.co.uk', 'london', 'britain', 'england', 'uk'],
-    'EU': ['.de', '.fr', '.es', '.it', 'europe', 'berlin', 'paris'],
-    'Global': ['international', 'worldwide', 'global']
+    'Global': ['global', 'international', 'worldwide', 'pepsi', 'coca-cola', 'mcdonalds', 'apple', 'microsoft', 'google'],
+    'US': ['.com', 'america', 'usa', 'united states', 'california', 'new york', 'texas', 'inc', 'corp'],
+    'UK': ['.co.uk', 'london', 'britain', 'england', 'uk', 'ltd'],
+    'EU': ['.de', '.fr', '.es', '.it', 'europe', 'berlin', 'paris', 'gmbh']
   };
   
   const text = `${businessName} ${websiteUrl}`.toLowerCase();
@@ -50,28 +50,75 @@ const extractGeographyHints = (businessName: string, websiteUrl: string): string
   return 'US'; // Default
 };
 
-const simulateClassification = (businessName: string, websiteUrl: string): BusinessClassification => {
+const performBusinessClassification = (businessName: string, websiteUrl: string): BusinessClassification => {
   const text = `${businessName} ${websiteUrl}`.toLowerCase();
   
-  if (text.includes('tech') || text.includes('software') || text.includes('app')) {
+  // Major brands classification
+  if (text.includes('pepsi') || text.includes('pepsico')) {
     return {
-      industry: 'Technology',
-      market: 'B2B SaaS',
-      geography: 'US',
-      category: 'Software & Technology'
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'Global',
+      category: 'Beverages & Snacks'
     };
   }
   
-  if (text.includes('finance') || text.includes('bank') || text.includes('payment')) {
+  if (text.includes('coca-cola') || text.includes('coke')) {
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'Global',
+      category: 'Beverages'
+    };
+  }
+  
+  if (text.includes('apple') && !text.includes('apple.com/developer')) {
+    return {
+      industry: 'Technology',
+      market: 'Consumer Electronics',
+      geography: 'Global',
+      category: 'Consumer Technology'
+    };
+  }
+  
+  if (text.includes('microsoft')) {
+    return {
+      industry: 'Technology',
+      market: 'Enterprise Software',
+      geography: 'Global',
+      category: 'Software & Cloud Services'
+    };
+  }
+  
+  if (text.includes('tesla')) {
+    return {
+      industry: 'Automotive',
+      market: 'Electric Vehicles',
+      geography: 'Global',
+      category: 'Electric Vehicles & Energy'
+    };
+  }
+  
+  // Industry-specific classification
+  if (text.includes('restaurant') || text.includes('food') || text.includes('beverage') || text.includes('drink')) {
+    return {
+      industry: 'Food & Beverage',
+      market: 'Restaurant & Food Service',
+      geography: 'US',
+      category: 'Food & Dining'
+    };
+  }
+  
+  if (text.includes('bank') || text.includes('finance') || text.includes('payment') || text.includes('fintech')) {
     return {
       industry: 'Financial Services',
-      market: 'Fintech',
+      market: 'Banking & Fintech',
       geography: 'US',
       category: 'Financial Technology'
     };
   }
   
-  if (text.includes('health') || text.includes('medical') || text.includes('clinic')) {
+  if (text.includes('health') || text.includes('medical') || text.includes('clinic') || text.includes('pharma')) {
     return {
       industry: 'Healthcare',
       market: 'Digital Health',
@@ -80,7 +127,7 @@ const simulateClassification = (businessName: string, websiteUrl: string): Busin
     };
   }
   
-  if (text.includes('retail') || text.includes('shop') || text.includes('store')) {
+  if (text.includes('retail') || text.includes('shop') || text.includes('store') || text.includes('ecommerce')) {
     return {
       industry: 'Retail',
       market: 'E-commerce',
@@ -89,10 +136,37 @@ const simulateClassification = (businessName: string, websiteUrl: string): Busin
     };
   }
   
-  // Default classification
+  if (text.includes('tech') || text.includes('software') || text.includes('app') || text.includes('saas')) {
+    return {
+      industry: 'Technology',
+      market: 'B2B SaaS',
+      geography: 'US',
+      category: 'Software & Technology'
+    };
+  }
+  
+  if (text.includes('auto') || text.includes('car') || text.includes('vehicle')) {
+    return {
+      industry: 'Automotive',
+      market: 'Auto Manufacturing',
+      geography: 'US',
+      category: 'Automotive'
+    };
+  }
+  
+  if (text.includes('energy') || text.includes('oil') || text.includes('gas') || text.includes('renewable')) {
+    return {
+      industry: 'Energy',
+      market: 'Energy & Utilities',
+      geography: 'US',
+      category: 'Energy & Utilities'
+    };
+  }
+  
+  // Default classification for unknown businesses
   return {
-    industry: 'Technology',
-    market: 'B2B Services',
+    industry: 'Business Services',
+    market: 'Professional Services',
     geography: 'US',
     category: 'Business Services'
   };
@@ -101,34 +175,69 @@ const simulateClassification = (businessName: string, websiteUrl: string): Busin
 export const generateTestPrompts = (classification: BusinessClassification, businessName: string): TestPrompt[] => {
   const { industry, market, geography, category } = classification;
   
-  return [
-    {
-      type: "Top Tools",
-      prompt: `What are the best ${industry.toLowerCase()} tools for small businesses in ${geography}?`
-    },
-    {
-      type: "Alternatives",
-      prompt: `What are some alternatives to popular ${market.toLowerCase()} solutions for ${industry.toLowerCase()}?`
-    },
-    {
-      type: "Use Case Match",
-      prompt: `Which platforms help ${industry.toLowerCase()} companies manage their operations in ${geography}?`
-    },
-    {
-      type: "Trends",
-      prompt: `What ${category.toLowerCase()} tools are gaining traction in ${geography}?`
-    },
-    {
-      type: "Feature Targeted",
-      prompt: `What tools provide automation features for ${market.toLowerCase()} companies?`
-    },
+  // Generate more specific prompts based on the classification
+  const prompts: TestPrompt[] = [];
+  
+  if (industry === 'Food & Beverage') {
+    prompts.push(
+      {
+        type: "Top Brands",
+        prompt: `What are the most popular beverage brands ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      },
+      {
+        type: "Alternatives",
+        prompt: `What are some alternatives to Coca-Cola for ${market.toLowerCase()} companies?`
+      },
+      {
+        type: "Market Leaders",
+        prompt: `Which companies dominate the ${category.toLowerCase()} market ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      },
+      {
+        type: "Industry Trends",
+        prompt: `What ${industry.toLowerCase()} brands are trending ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      },
+      {
+        type: "Comparison",
+        prompt: `Compare the leading ${category.toLowerCase()} brands available ${geography === 'Global' ? 'worldwide' : `in ${geography}`}.`
+      }
+    );
+  } else {
+    // Generic prompts for other industries
+    prompts.push(
+      {
+        type: "Top Tools",
+        prompt: `What are the best ${industry.toLowerCase()} tools for businesses ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      },
+      {
+        type: "Alternatives",
+        prompt: `What are some alternatives to popular ${market.toLowerCase()} solutions?`
+      },
+      {
+        type: "Use Case Match",
+        prompt: `Which platforms help ${industry.toLowerCase()} companies manage their operations ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      },
+      {
+        type: "Trends",
+        prompt: `What ${category.toLowerCase()} tools are gaining traction ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      },
+      {
+        type: "Feature Targeted",
+        prompt: `What tools provide automation features for ${market.toLowerCase()} companies?`
+      }
+    );
+  }
+  
+  // Add recommendation and comparison prompts
+  prompts.push(
     {
       type: "Recommendation",
-      prompt: `Can you recommend ${industry.toLowerCase()} software for a growing business in ${geography}?`
+      prompt: `Can you recommend ${industry.toLowerCase()} solutions for businesses ${geography === 'Global' ? 'operating globally' : `in ${geography}`}?`
     },
     {
       type: "Comparison",
-      prompt: `Compare the leading ${category.toLowerCase()} solutions available in ${geography}.`
+      prompt: `Compare the leading ${category.toLowerCase()} solutions available ${geography === 'Global' ? 'worldwide' : `in ${geography}`}.`
     }
-  ];
+  );
+  
+  return prompts;
 };
