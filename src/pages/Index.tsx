@@ -8,6 +8,7 @@ import { ArrowDown, Search, CheckCircle, Target, TrendingUp } from "lucide-react
 import { ScanForm } from "@/components/ScanForm";
 import { ProcessingView } from "@/components/ProcessingView";
 import { ResultsView } from "@/components/ResultsView";
+import { BusinessClassification, TestPrompt, classifyBusiness, generateTestPrompts } from "@/services/llmClassification";
 
 export type ScanStatus = 'idle' | 'processing' | 'completed' | 'error';
 
@@ -25,6 +26,8 @@ export interface ScanResults {
   llmMentions: number;
   hasStructuredData: boolean;
   publicPresence: string[];
+  classification: BusinessClassification;
+  testPrompts: TestPrompt[];
 }
 
 const Index = () => {
@@ -32,40 +35,56 @@ const Index = () => {
   const [scanData, setScanData] = useState<ScanData | null>(null);
   const [results, setResults] = useState<ScanResults | null>(null);
 
-  const handleScanStart = (data: ScanData) => {
+  const handleScanStart = async (data: ScanData) => {
     setScanData(data);
     setScanStatus('processing');
     
-    // Simulate processing time
-    setTimeout(() => {
-      // Mock results - in production this would come from your backend
+    try {
+      // Step 1: Classify the business using LLM
+      const classification = await classifyBusiness(data.businessName, data.websiteUrl);
+      
+      // Step 2: Generate test prompts based on classification
+      const testPrompts = generateTestPrompts(classification, data.businessName);
+      
+      // Step 3: Simulate running prompts against LLMs
+      await new Promise(resolve => setTimeout(resolve, 4000));
+      
+      // Step 4: Generate mock results with classification data
       const mockResults: ScanResults = {
         geoScore: 6.3,
         benchmarkScore: 7.5,
         strengths: [
-          "Clear product description on homepage",
+          `Clear ${classification.industry.toLowerCase()} product description on homepage`,
           "Public presence on Crunchbase",
-          "Active social media presence"
+          `Active presence in ${classification.geography} market`
         ],
         gaps: [
-          "No mention in common 'Top tools' prompts",
+          `No mention in common "Top ${classification.category.toLowerCase()}" prompts`,
           "No structured data detected on homepage",
-          "Not cited in public Q&A formats (Reddit, GitHub, Quora)"
+          `Not cited in ${classification.industry.toLowerCase()} forums and Q&A platforms`
         ],
         recommendations: [
           "Add structured metadata (JSON-LD schema)",
-          "Create public profile on GitHub / Wikidata",
-          "Publish one 'Top 5 tools' blog that references your own product",
-          "Encourage mentions on high-authority forums"
+          `Create public profile on ${classification.industry.toLowerCase()}-specific platforms`,
+          `Publish "Top 5 ${classification.category.toLowerCase()} tools" content`,
+          `Encourage mentions on ${classification.geography} high-authority forums`
         ],
         llmMentions: 3,
         hasStructuredData: false,
-        publicPresence: ["Crunchbase", "LinkedIn"]
+        publicPresence: ["Crunchbase", "LinkedIn"],
+        classification,
+        testPrompts: testPrompts.map(prompt => ({
+          ...prompt,
+          response: `Analyzed for ${data.businessName} - ${Math.random() > 0.6 ? 'Mentioned' : 'Not mentioned'}`
+        }))
       };
       
       setResults(mockResults);
       setScanStatus('completed');
-    }, 8000);
+    } catch (error) {
+      console.error('Scan failed:', error);
+      setScanStatus('error');
+    }
   };
 
   const handleNewScan = () => {

@@ -1,9 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, CheckCircle, Download, Share, RotateCcw, TrendingUp, Target, Globe } from "lucide-react";
+import { AlertTriangle, CheckCircle, Download, Share, RotateCcw, TrendingUp, Target, Globe, Search, MapPin, Building } from "lucide-react";
 import { ScanData, ScanResults } from "@/pages/Index";
 
 interface ResultsViewProps {
@@ -65,6 +64,45 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
             </Button>
           </div>
         </div>
+
+        {/* Business Classification */}
+        <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center text-xl font-bold text-gray-800">
+              <Building className="w-5 h-5 mr-2 text-blue-600" />
+              Business Classification
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-sm text-gray-500 mb-1">Industry</div>
+                <Badge variant="outline" className="text-sm font-medium">
+                  {results.classification.industry}
+                </Badge>
+              </div>
+              <div className="text-center">
+                <div className="text-sm text-gray-500 mb-1">Market</div>
+                <Badge variant="outline" className="text-sm font-medium">
+                  {results.classification.market}
+                </Badge>
+              </div>
+              <div className="text-center">
+                <div className="text-sm text-gray-500 mb-1">Geography</div>
+                <Badge variant="outline" className="text-sm font-medium">
+                  <MapPin className="w-3 h-3 mr-1" />
+                  {results.classification.geography}
+                </Badge>
+              </div>
+              <div className="text-center">
+                <div className="text-sm text-gray-500 mb-1">Category</div>
+                <Badge variant="outline" className="text-sm font-medium">
+                  {results.classification.category}
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* GEO Score Card */}
         <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm mb-8">
@@ -153,6 +191,44 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
             </CardContent>
           </Card>
         </div>
+
+        {/* Test Prompts Used */}
+        <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center text-xl font-bold text-gray-800">
+              <Search className="w-5 h-5 mr-2 text-purple-600" />
+              Test Prompts Used
+            </CardTitle>
+            <p className="text-gray-600">
+              These prompts were customized based on your business classification and tested across multiple LLMs
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {results.testPrompts.map((prompt, index) => (
+                <div key={index} className="border rounded-lg p-4 bg-gray-50/50">
+                  <div className="flex items-start justify-between mb-2">
+                    <Badge variant="outline" className="text-xs">
+                      {prompt.type}
+                    </Badge>
+                    {prompt.response && (
+                      <div className={`text-xs px-2 py-1 rounded-full ${
+                        prompt.response.includes('Mentioned') 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {prompt.response.includes('Mentioned') ? '✓ Found' : '✗ Not Found'}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed">
+                    "{prompt.prompt}"
+                  </p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Strengths and Gaps */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
