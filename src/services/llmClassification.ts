@@ -32,7 +32,7 @@ export const classifyBusiness = async (businessName: string, websiteUrl: string)
 
 const extractGeographyHints = (businessName: string, websiteUrl: string): string => {
   const geoKeywords = {
-    'Global': ['global', 'international', 'worldwide', 'pepsi', 'coca-cola', 'mcdonalds', 'apple', 'microsoft', 'google'],
+    'Global': ['global', 'international', 'worldwide', 'pepsi', 'coca-cola', 'mcdonalds', 'apple', 'microsoft', 'google', 'akamai'],
     'US': ['.com', 'america', 'usa', 'united states', 'california', 'new york', 'texas', 'inc', 'corp'],
     'UK': ['.co.uk', 'london', 'britain', 'england', 'uk', 'ltd'],
     'EU': ['.de', '.fr', '.es', '.it', 'europe', 'berlin', 'paris', 'gmbh']
@@ -51,6 +51,16 @@ const extractGeographyHints = (businessName: string, websiteUrl: string): string
 
 const performBusinessClassification = (businessName: string, websiteUrl: string): BusinessClassification => {
   const text = `${businessName} ${websiteUrl}`.toLowerCase();
+  
+  // Major technology companies classification
+  if (text.includes('akamai')) {
+    return {
+      industry: 'Technology',
+      market: 'Cloud Infrastructure',
+      geography: 'Global',
+      category: 'CDN & Edge Computing'
+    };
+  }
   
   // Major brands classification
   if (text.includes('pepsi') || text.includes('pepsico')) {
@@ -98,7 +108,7 @@ const performBusinessClassification = (businessName: string, websiteUrl: string)
     };
   }
   
-  // Industry-specific classification
+  // Industry-specific classification with enhanced technology detection
   if (text.includes('restaurant') || text.includes('food') || text.includes('beverage') || text.includes('drink')) {
     return {
       industry: 'Food & Beverage',
@@ -135,7 +145,13 @@ const performBusinessClassification = (businessName: string, websiteUrl: string)
     };
   }
   
-  if (text.includes('tech') || text.includes('software') || text.includes('app') || text.includes('saas')) {
+  // Enhanced technology classification with more keywords
+  if (text.includes('tech') || text.includes('software') || text.includes('app') || text.includes('saas') ||
+      text.includes('cloud') || text.includes('api') || text.includes('platform') || text.includes('data') ||
+      text.includes('analytics') || text.includes('ai') || text.includes('ml') || text.includes('cyber') ||
+      text.includes('security') || text.includes('infrastructure') || text.includes('computing') ||
+      text.includes('digital') || text.includes('internet') || text.includes('web') || text.includes('network') ||
+      text.includes('server') || text.includes('hosting') || text.includes('cdn') || text.includes('edge')) {
     return {
       industry: 'Technology',
       market: 'B2B SaaS',
@@ -175,7 +191,7 @@ export const calculateGeoScore = (classification: BusinessClassification, busine
   let baseScore = 5.0; // Starting baseline
   
   // Score adjustments based on business classification
-  const globalBrands = ['pepsi', 'coca-cola', 'apple', 'microsoft', 'tesla', 'google', 'amazon'];
+  const globalBrands = ['pepsi', 'coca-cola', 'apple', 'microsoft', 'tesla', 'google', 'amazon', 'akamai'];
   const isGlobalBrand = globalBrands.some(brand => businessName.toLowerCase().includes(brand));
   
   if (isGlobalBrand) {
@@ -234,7 +250,30 @@ export const generateTestPrompts = (classification: BusinessClassification, busi
   // Generate more specific prompts based on the classification
   const prompts: TestPrompt[] = [];
   
-  if (industry === 'Food & Beverage') {
+  if (industry === 'Technology') {
+    prompts.push(
+      {
+        type: "Top Tools",
+        prompt: `What are the leading ${category.toLowerCase()} solutions ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      },
+      {
+        type: "Alternatives",
+        prompt: `What are some alternatives to popular ${market.toLowerCase()} platforms?`
+      },
+      {
+        type: "Market Leaders",
+        prompt: `Which companies dominate the ${category.toLowerCase()} space ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      },
+      {
+        type: "Industry Trends",
+        prompt: `What ${industry.toLowerCase()} companies are leading innovation ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      },
+      {
+        type: "Use Case Match",
+        prompt: `Which platforms help businesses with ${market.toLowerCase()} needs ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      }
+    );
+  } else if (industry === 'Food & Beverage') {
     prompts.push(
       {
         type: "Top Brands",
@@ -307,7 +346,7 @@ export const generateTestPrompts = (classification: BusinessClassification, busi
 };
 
 const getMentionProbability = (businessName: string, classification: BusinessClassification): number => {
-  const globalBrands = ['pepsi', 'coca-cola', 'apple', 'microsoft', 'tesla', 'google', 'amazon'];
+  const globalBrands = ['pepsi', 'coca-cola', 'apple', 'microsoft', 'tesla', 'google', 'amazon', 'akamai'];
   const isGlobalBrand = globalBrands.some(brand => businessName.toLowerCase().includes(brand));
   
   if (isGlobalBrand) {
