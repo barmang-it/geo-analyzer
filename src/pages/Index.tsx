@@ -49,10 +49,13 @@ const Index = () => {
       // Step 3: Simulate running prompts against LLMs
       await new Promise(resolve => setTimeout(resolve, 4000));
       
-      // Step 4: Generate mock results with classification data
+      // Step 4: Calculate dynamic scores
+      const { geoScore, benchmarkScore } = calculateGeoScore(classification, data.businessName, testPrompts);
+      
+      // Step 5: Generate results with dynamic scoring
       const mockResults: ScanResults = {
-        geoScore: 6.3,
-        benchmarkScore: 7.5,
+        geoScore,
+        benchmarkScore,
         strengths: [
           `Clear ${classification.industry.toLowerCase()} product description on homepage`,
           "Public presence on Crunchbase",
@@ -69,14 +72,11 @@ const Index = () => {
           `Publish "Top 5 ${classification.category.toLowerCase()} tools" content`,
           `Encourage mentions on ${classification.geography} high-authority forums`
         ],
-        llmMentions: 3,
-        hasStructuredData: false,
+        llmMentions: testPrompts.filter(p => p.response?.includes('Mentioned')).length,
+        hasStructuredData: Math.random() > 0.6,
         publicPresence: ["Crunchbase", "LinkedIn"],
         classification,
-        testPrompts: testPrompts.map(prompt => ({
-          ...prompt,
-          response: `Analyzed for ${data.businessName} - ${Math.random() > 0.6 ? 'Mentioned' : 'Not mentioned'}`
-        }))
+        testPrompts
       };
       
       setResults(mockResults);
