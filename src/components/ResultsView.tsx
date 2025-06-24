@@ -74,7 +74,7 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-4 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <div className="text-center">
                 <div className="text-sm text-gray-500 mb-1">Industry</div>
                 <Badge variant="outline" className="text-sm font-medium">
@@ -92,12 +92,6 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
                 <Badge variant="outline" className="text-sm font-medium">
                   <MapPin className="w-3 h-3 mr-1" />
                   {results.classification.geography}
-                </Badge>
-              </div>
-              <div className="text-center">
-                <div className="text-sm text-gray-500 mb-1">Category</div>
-                <Badge variant="outline" className="text-sm font-medium">
-                  {results.classification.category}
                 </Badge>
               </div>
             </div>
