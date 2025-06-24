@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,7 @@ import { ArrowDown, Search, CheckCircle, Target, TrendingUp } from "lucide-react
 import { ScanForm } from "@/components/ScanForm";
 import { ProcessingView } from "@/components/ProcessingView";
 import { ResultsView } from "@/components/ResultsView";
-import { BusinessClassification, TestPrompt, classifyBusiness, generateTestPrompts } from "@/services/llmClassification";
+import { BusinessClassification, TestPrompt, classifyBusiness, generateTestPrompts, calculateGeoScore } from "@/services/llmClassification";
 
 export type ScanStatus = 'idle' | 'processing' | 'completed' | 'error';
 
