@@ -1,0 +1,329 @@
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { corsHeaders } from '../_shared/cors.ts'
+
+interface AnalyzeRequest {
+  businessName: string;
+  websiteUrl: string;
+}
+
+interface WebsiteContent {
+  title: string;
+  description: string;
+  content: string;
+  hasStructuredData: boolean;
+}
+
+interface BusinessClassification {
+  industry: string;
+  market: string;
+  geography: string;
+}
+
+interface TestPrompt {
+  type: string;
+  prompt: string;
+  response?: string;
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    const { businessName, websiteUrl }: AnalyzeRequest = await req.json()
+    
+    // Step 1: Extract website content
+    const websiteContent = await extractWebsiteContent(websiteUrl)
+    
+    // Step 2: Classify business using OpenAI
+    const classification = await classifyBusinessWithLLM(businessName, websiteUrl, websiteContent)
+    
+    // Step 3: Generate test prompts
+    const testPrompts = generateTestPrompts(classification, businessName)
+    
+    // Step 4: Test prompts against LLMs
+    const promptResults = await testPromptsAgainstLLMs(testPrompts, businessName)
+    
+    // Step 5: Calculate scores
+    const scores = calculateScores(classification, promptResults, websiteContent)
+    
+    return new Response(
+      JSON.stringify({
+        classification,
+        testPrompts: promptResults,
+        geoScore: scores.geoScore,
+        benchmarkScore: scores.benchmarkScore,
+        hasStructuredData: websiteContent.hasStructuredData,
+        llmMentions: promptResults.filter(p => p.response?.includes('mentioned')).length
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      },
+    )
+  } catch (error) {
+    console.error('Analysis error:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      },
+    )
+  }
+})
+
+async function extractWebsiteContent(url: string): Promise<WebsiteContent> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; CiteMe-Bot/1.0)'
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+    
+    const html = await response.text()
+    
+    // Extract title
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
+    const title = titleMatch ? titleMatch[1].trim() : ''
+    
+    // Extract meta description
+    const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i)
+    const description = descMatch ? descMatch[1].trim() : ''
+    
+    // Extract main content (simplified)
+    const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i)
+    const bodyContent = bodyMatch ? bodyMatch[1] : html
+    const textContent = bodyContent
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 2000) // Limit content length
+    
+    // Check for structured data
+    const hasStructuredData = html.includes('application/ld+json') || 
+                              html.includes('schema.org') ||
+                              html.includes('microdata')
+    
+    return {
+      title,
+      description,
+      content: textContent,
+      hasStructuredData
+    }
+  } catch (error) {
+    console.error('Website extraction error:', error)
+    return {
+      title: '',
+      description: '',
+      content: '',
+      hasStructuredData: false
+    }
+  }
+}
+
+async function classifyBusinessWithLLM(
+  businessName: string, 
+  websiteUrl: string, 
+  content: WebsiteContent
+): Promise<BusinessClassification> {
+  const openaiKey = Deno.env.get('OPENAI_API_KEY')
+  if (!openaiKey) {
+    throw new Error('OpenAI API key not configured')
+  }
+  
+  const prompt = `Analyze this business and classify it:
+Business Name: ${businessName}
+Website: ${websiteUrl}
+Title: ${content.title}
+Description: ${content.description}
+Content Preview: ${content.content.substring(0, 500)}
+
+Classify this business into:
+1. Industry (e.g., Technology, Healthcare, Finance, Retail, etc.)
+2. Market (e.g., B2B SaaS, E-commerce, Consumer Electronics, etc.)
+3. Geography (Global, US, EU, or specific region)
+
+Respond in JSON format:
+{
+  "industry": "...",
+  "market": "...",
+  "geography": "..."
+}`
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a business classification expert. Respond only with valid JSON.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 200
+      }),
+    })
+    
+    const data = await response.json()
+    const result = JSON.parse(data.choices[0].message.content)
+    
+    return {
+      industry: result.industry || 'Business Services',
+      market: result.market || 'Professional Services',
+      geography: result.geography || 'US'
+    }
+  } catch (error) {
+    console.error('LLM classification error:', error)
+    // Fallback to basic classification
+    return {
+      industry: 'Technology',
+      market: 'B2B SaaS',
+      geography: 'US'
+    }
+  }
+}
+
+function generateTestPrompts(classification: BusinessClassification, businessName: string): TestPrompt[] {
+  const { industry, market, geography } = classification
+  
+  return [
+    {
+      type: "Top Tools",
+      prompt: `What are the leading ${industry.toLowerCase()} solutions ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+    },
+    {
+      type: "Alternatives",
+      prompt: `What are some alternatives to popular ${market.toLowerCase()} platforms?`
+    },
+    {
+      type: "Market Leaders",
+      prompt: `Which companies dominate the ${industry.toLowerCase()} space ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+    },
+    {
+      type: "Industry Trends",
+      prompt: `What ${industry.toLowerCase()} companies are leading innovation?`
+    },
+    {
+      type: "Recommendation",
+      prompt: `Can you recommend ${industry.toLowerCase()} solutions for businesses?`
+    },
+    {
+      type: "Comparison",
+      prompt: `Compare the leading ${market.toLowerCase()} solutions available.`
+    },
+    {
+      type: "Use Case Match",
+      prompt: `Which platforms help businesses with ${market.toLowerCase()} needs?`
+    }
+  ]
+}
+
+async function testPromptsAgainstLLMs(prompts: TestPrompt[], businessName: string): Promise<TestPrompt[]> {
+  const openaiKey = Deno.env.get('OPENAI_API_KEY')
+  if (!openaiKey) {
+    throw new Error('OpenAI API key not configured')
+  }
+  
+  const results: TestPrompt[] = []
+  
+  for (const prompt of prompts) {
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'user',
+              content: prompt.prompt
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 500
+        }),
+      })
+      
+      const data = await response.json()
+      const content = data.choices[0].message.content.toLowerCase()
+      
+      // Check if business name is mentioned in response
+      const mentioned = content.includes(businessName.toLowerCase())
+      
+      results.push({
+        ...prompt,
+        response: mentioned ? 'mentioned' : 'not mentioned'
+      })
+      
+      // Rate limiting - wait between requests
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+    } catch (error) {
+      console.error(`Error testing prompt: ${prompt.type}`, error)
+      results.push({
+        ...prompt,
+        response: 'error'
+      })
+    }
+  }
+  
+  return results
+}
+
+function calculateScores(
+  classification: BusinessClassification, 
+  promptResults: TestPrompt[], 
+  content: WebsiteContent
+): { geoScore: number; benchmarkScore: number } {
+  let baseScore = 5.0
+  
+  // Score based on mentions
+  const mentionCount = promptResults.filter(p => p.response === 'mentioned').length
+  const mentionScore = (mentionCount / promptResults.length) * 3 // Max 3 points
+  
+  // Score based on structured data
+  const structuredDataScore = content.hasStructuredData ? 1 : 0
+  
+  // Score based on geography
+  const geoScore = classification.geography === 'Global' ? 1 : 0.5
+  
+  const finalScore = Math.min(10, baseScore + mentionScore + structuredDataScore + geoScore)
+  
+  // Industry benchmarks
+  const benchmarks: Record<string, number> = {
+    'Technology': 6.8,
+    'Healthcare': 6.1,
+    'Finance': 6.5,
+    'Retail': 6.3,
+    'Food & Beverage': 7.2
+  }
+  
+  const benchmarkScore = benchmarks[classification.industry] || 6.0
+  
+  return {
+    geoScore: Math.round(finalScore * 10) / 10,
+    benchmarkScore: Math.round(benchmarkScore * 10) / 10
+  }
+}
