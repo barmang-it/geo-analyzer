@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,13 +7,9 @@ import { ArrowDown, Search, CheckCircle, Target, TrendingUp } from "lucide-react
 import { ScanForm } from "@/components/ScanForm";
 import { ProcessingView } from "@/components/ProcessingView";
 import { ResultsView } from "@/components/ResultsView";
-import { 
-  analyzeWebsite, 
-  generateDynamicStrengthsAndGaps, 
-  generateDynamicRecommendations,
-  BusinessClassification,
-  TestPrompt 
-} from "@/services/realLlmAnalysis";
+import { CostMonitor } from "@/components/CostMonitor";
+import { UsageTracker } from "@/services/usageTracking";
+import { analyzeWebsite, generateDynamicStrengthsAndGaps, generateDynamicRecommendations, BusinessClassification, TestPrompt } from "@/services/realLlmAnalysis";
 
 export type ScanStatus = 'idle' | 'processing' | 'completed' | 'error';
 
@@ -48,9 +43,17 @@ const Index = () => {
     setError(null);
     
     try {
-      console.log('Starting analysis for:', data);
+      console.log('Starting cost-protected analysis for:', data);
       
-      // Use the real analysis service
+      // Check usage limits before starting
+      const usageTracker = UsageTracker.getInstance();
+      const usageInfo = usageTracker.getUsageInfo();
+      
+      if (!usageInfo.withinBudget) {
+        console.log('Budget exceeded, using mock analysis');
+      }
+      
+      // Use the cost-protected analysis service
       const analysisResult = await analyzeWebsite(data.businessName, data.websiteUrl);
       
       console.log('Analysis result:', analysisResult);
@@ -140,6 +143,11 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
+        {/* Cost Monitor */}
+        <div className="max-w-2xl mx-auto mb-8">
+          <CostMonitor />
+        </div>
+
         <div className="text-center max-w-4xl mx-auto mb-16">
           <Badge className="mb-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2">
             CiteMe.AI

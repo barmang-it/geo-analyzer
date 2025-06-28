@@ -1,3 +1,4 @@
+import { UsageTracker } from './usageTracking';
 
 export interface BusinessClassification {
   industry: string;
@@ -24,18 +25,36 @@ export const analyzeWebsite = async (
   businessName: string, 
   websiteUrl: string
 ): Promise<AnalysisResult> => {
-  // In production, this would use your deployed Supabase function
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const usageTracker = UsageTracker.getInstance();
+  const clientIP = 'anonymous'; // In production, this would be the user's IP
+  
+  console.log('Starting cost-protected website analysis...', { businessName, websiteUrl });
+  
+  // Check rate limits
+  const rateLimitInfo = usageTracker.checkRateLimit(clientIP);
+  if (!rateLimitInfo.allowed) {
+    console.log('Rate limit exceeded, falling back to mock analysis');
+    return getMockAnalysis(businessName, websiteUrl, 'Rate limit exceeded');
+  }
+  
+  // Check budget limits
+  if (!usageTracker.checkBudgetLimit()) {
+    console.log('Daily budget exceeded, falling back to mock analysis');
+    return getMockAnalysis(businessName, websiteUrl, 'Daily budget exceeded');
+  }
+  
+  // Attempt real analysis
+  const supabaseUrl = "https://cxeyudjaehsmtmqnzklk.supabase.co"
   const functionUrl = `${supabaseUrl}/functions/v1/analyze-website`
   
   try {
-    console.log('Starting website analysis...', { businessName, websiteUrl })
+    console.log('Attempting real LLM analysis...')
     
     const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4ZXl1ZGphZWhzbXRtcW56a2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwNDA1OTUsImV4cCI6MjA2NjYxNjU5NX0.kH-nWJME9-UYvINUvPcO9DyWjVu9gVZQgc3ZxyNyPWY`
       },
       body: JSON.stringify({
         businessName,
@@ -48,20 +67,27 @@ export const analyzeWebsite = async (
     }
     
     const result = await response.json()
-    console.log('Analysis complete:', result)
     
+    // Record successful scan
+    usageTracker.recordScan(clientIP);
+    
+    console.log('Real analysis complete:', result)
     return result
-  } catch (error) {
-    console.error('Website analysis error:', error)
     
-    // Fallback to mock data if API fails
-    console.log('Falling back to mock analysis...')
-    return getMockAnalysis(businessName, websiteUrl)
+  } catch (error) {
+    console.error('Real analysis failed, falling back to mock:', error)
+    return getMockAnalysis(businessName, websiteUrl, 'API failure fallback')
   }
 }
 
-// Fallback mock analysis for development/testing
-const getMockAnalysis = (businessName: string, websiteUrl: string): AnalysisResult => {
+// Enhanced mock analysis with fallback reason
+const getMockAnalysis = (
+  businessName: string, 
+  websiteUrl: string, 
+  fallbackReason?: string
+): AnalysisResult => {
+  console.log(`Using mock analysis${fallbackReason ? ` (${fallbackReason})` : ''}`)
+  
   const mockClassification: BusinessClassification = {
     industry: 'Technology',
     market: 'B2B SaaS',
@@ -82,6 +108,16 @@ const getMockAnalysis = (businessName: string, websiteUrl: string): AnalysisResu
     {
       type: "Market Leaders",
       prompt: "Which companies dominate the technology space in the US?",
+      response: Math.random() > 0.5 ? 'mentioned' : 'not mentioned'
+    },
+    {
+      type: "Industry Trends",
+      prompt: "What technology companies are leading innovation?",
+      response: Math.random() > 0.5 ? 'mentioned' : 'not mentioned'
+    },
+    {
+      type: "Recommendation",
+      prompt: "Can you recommend technology solutions for businesses?",
       response: Math.random() > 0.5 ? 'mentioned' : 'not mentioned'
     }
   ]
