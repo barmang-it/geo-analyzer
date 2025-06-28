@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,7 @@ export const CostMonitor = () => {
   const { isAdmin, logout } = useAuth();
   const [usageInfo, setUsageInfo] = useState(UsageTracker.getInstance().getUsageInfo());
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -21,11 +23,44 @@ export const CostMonitor = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Show login form if not admin
-  if (!isAdmin) {
-    return <AdminLogin />;
+  // If admin is not logged in and admin login is not being shown, return null
+  // This allows regular users to proceed without any login prompts
+  if (!isAdmin && !showAdminLogin) {
+    return (
+      <div className="fixed top-4 right-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowAdminLogin(true)}
+          className="bg-white/80 backdrop-blur-sm"
+        >
+          <Shield className="w-3 h-3 mr-1" />
+          Admin
+        </Button>
+      </div>
+    );
   }
 
+  // Show admin login form if requested but not logged in
+  if (!isAdmin && showAdminLogin) {
+    return (
+      <div className="fixed top-4 right-4 z-50">
+        <div className="relative">
+          <AdminLogin />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowAdminLogin(false)}
+            className="absolute -top-2 -right-2 h-6 w-6 p-0 bg-white rounded-full shadow-sm"
+          >
+            ×
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show full monitoring dashboard for admin users
   const budgetPercentage = ((5 - usageInfo.budgetRemaining) / 5) * 100;
   const isNearLimit = budgetPercentage > 80;
 
