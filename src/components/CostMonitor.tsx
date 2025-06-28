@@ -1,12 +1,15 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { AlertTriangle, Shield, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, Shield, TrendingUp, LogOut } from 'lucide-react';
 import { UsageTracker } from '@/services/usageTracking';
+import { useAuth } from '@/hooks/useAuth';
+import { AdminLogin } from './AdminLogin';
 
 export const CostMonitor = () => {
+  const { isAdmin, logout } = useAuth();
   const [usageInfo, setUsageInfo] = useState(UsageTracker.getInstance().getUsageInfo());
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -17,6 +20,11 @@ export const CostMonitor = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Show login form if not admin
+  if (!isAdmin) {
+    return <AdminLogin />;
+  }
 
   const budgetPercentage = ((5 - usageInfo.budgetRemaining) / 5) * 100;
   const isNearLimit = budgetPercentage > 80;
@@ -30,13 +38,24 @@ export const CostMonitor = () => {
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Shield className="w-4 h-4" />
-            Cost Protection Active
+            Cost Protection Active (Admin)
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant={isNearLimit ? "destructive" : "secondary"}>
               ${usageInfo.budgetRemaining.toFixed(2)} remaining
             </Badge>
             {isNearLimit && <AlertTriangle className="w-4 h-4 text-orange-500" />}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                logout();
+              }}
+              className="h-6 w-6 p-0"
+            >
+              <LogOut className="w-3 h-3" />
+            </Button>
           </div>
         </div>
       </CardHeader>
@@ -62,7 +81,7 @@ export const CostMonitor = () => {
               </div>
               
               <div>
-                <div className="font-medium">Rate Limits</div>
+                <div className="font-medium">Rate Limit Hits</div>
                 <p className="text-lg font-semibold">{usageInfo.rateLimitHits}</p>
               </div>
             </div>
