@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from '../_shared/cors.ts'
 
@@ -263,7 +264,17 @@ Respond in JSON format:
       }),
     })
     
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`)
+    }
+    
     const data = await response.json()
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Invalid OpenAI response format:', data)
+      throw new Error('Invalid response from OpenAI API')
+    }
+    
     const result = JSON.parse(data.choices[0].message.content)
     
     return {
@@ -346,7 +357,26 @@ async function testPromptsAgainstLLMs(prompts: TestPrompt[], businessName: strin
         }),
       })
       
+      if (!response.ok) {
+        console.error(`OpenAI API error for prompt ${prompt.type}: ${response.status} ${response.statusText}`)
+        results.push({
+          ...prompt,
+          response: 'error'
+        })
+        continue
+      }
+      
       const data = await response.json()
+      
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        console.error(`Invalid OpenAI response format for prompt ${prompt.type}:`, data)
+        results.push({
+          ...prompt,
+          response: 'error'
+        })
+        continue
+      }
+      
       const content = data.choices[0].message.content.toLowerCase()
       
       // Check if business name is mentioned in response
