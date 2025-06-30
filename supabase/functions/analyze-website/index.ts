@@ -41,6 +41,8 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  const startTime = Date.now();
+
   try {
     // Check circuit breaker
     if (circuitBreakerOpen) {
@@ -87,20 +89,26 @@ serve(async (req) => {
     
     console.log(`Processing analysis for ${businessName} (${websiteUrl}) - Usage: ${todayUsage + 1}/${DAILY_LIMIT}`)
     
-    // Step 1: Extract website content
-    const websiteContent = await extractWebsiteContent(websiteUrl)
-    
-    // Step 2: Classify business using OpenAI
-    const classification = await classifyBusinessWithLLM(businessName, websiteUrl, websiteContent)
-    
-    // Step 3: Generate test prompts
-    const testPrompts = generateTestPrompts(classification, businessName)
-    
-    // Step 4: Test prompts against LLMs
-    const promptResults = await testPromptsAgainstLLMs(testPrompts, businessName)
-    
-    // Step 5: Calculate scores
-    const scores = calculateScores(classification, promptResults, websiteContent)
+    // Start all operations in parallel for maximum speed
+    const [websiteContent, classificationResult, promptTestResults] = await Promise.allSettled([
+      extractWebsiteContent(websiteUrl),
+      classifyBusinessWithLLM(businessName, websiteUrl),
+      testPromptsInParallel(businessName)
+    ]);
+
+    // Handle results with fallbacks
+    const content = websiteContent.status === 'fulfilled' ? websiteContent.value : {
+      title: '', description: '', content: '', hasStructuredData: false
+    };
+
+    const classification = classificationResult.status === 'fulfilled' ? classificationResult.value : {
+      industry: 'Technology', market: 'B2B SaaS', geography: 'US'
+    };
+
+    const promptResults = promptTestResults.status === 'fulfilled' ? promptTestResults.value : [];
+
+    // Calculate scores
+    const scores = calculateScores(classification, promptResults, content);
     
     // Record successful usage
     dailyUsage.set(today, todayUsage + 1);
@@ -110,6 +118,9 @@ serve(async (req) => {
       failureCount = 0;
       console.log('Resetting failure count after successful request');
     }
+
+    const processingTime = Date.now() - startTime;
+    console.log(`Analysis completed in ${processingTime}ms`);
     
     return new Response(
       JSON.stringify({
@@ -117,8 +128,9 @@ serve(async (req) => {
         testPrompts: promptResults,
         geoScore: scores.geoScore,
         benchmarkScore: scores.benchmarkScore,
-        hasStructuredData: websiteContent.hasStructuredData,
+        hasStructuredData: content.hasStructuredData,
         llmMentions: promptResults.filter(p => p.response?.includes('mentioned')).length,
+        processingTime,
         usageInfo: {
           dailyUsage: todayUsage + 1,
           dailyLimit: DAILY_LIMIT,
@@ -157,12 +169,18 @@ serve(async (req) => {
 })
 
 async function extractWebsiteContent(url: string): Promise<WebsiteContent> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
+
   try {
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; CiteMe-Bot/1.0)'
-      }
+      },
+      signal: controller.signal
     })
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`)
@@ -187,7 +205,7 @@ async function extractWebsiteContent(url: string): Promise<WebsiteContent> {
       .replace(/<[^>]*>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
-      .substring(0, 2000) // Limit content length
+      .substring(0, 1000) // Reduced content length for faster processing
     
     // Check for structured data
     const hasStructuredData = html.includes('application/ld+json') || 
@@ -201,6 +219,7 @@ async function extractWebsiteContent(url: string): Promise<WebsiteContent> {
       hasStructuredData
     }
   } catch (error) {
+    clearTimeout(timeoutId);
     console.error('Website extraction error:', error)
     return {
       title: '',
@@ -213,32 +232,26 @@ async function extractWebsiteContent(url: string): Promise<WebsiteContent> {
 
 async function classifyBusinessWithLLM(
   businessName: string, 
-  websiteUrl: string, 
-  content: WebsiteContent
+  websiteUrl: string
 ): Promise<BusinessClassification> {
   const openaiKey = Deno.env.get('OPENAI_API_KEY')
   if (!openaiKey) {
     throw new Error('OpenAI API key not configured')
   }
   
-  const prompt = `Analyze this business and classify it:
-Business Name: ${businessName}
+  const prompt = `Classify this business quickly:
+Business: ${businessName}
 Website: ${websiteUrl}
-Title: ${content.title}
-Description: ${content.description}
-Content Preview: ${content.content.substring(0, 500)}
 
-Classify this business into:
-1. Industry (e.g., Technology, Healthcare, Finance, Retail, etc.)
-2. Market (e.g., B2B SaaS, E-commerce, Consumer Electronics, etc.)
-3. Geography (Global, US, EU, or specific region)
-
-Respond in JSON format:
+Return JSON only:
 {
-  "industry": "...",
-  "market": "...",
-  "geography": "..."
+  "industry": "Technology|Healthcare|Finance|Retail|Other",
+  "market": "B2B SaaS|E-commerce|Consumer|Enterprise|Other", 
+  "geography": "Global|US|EU|Other"
 }`
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -252,39 +265,41 @@ Respond in JSON format:
         messages: [
           {
             role: 'system',
-            content: 'You are a business classification expert. Respond only with valid JSON.'
+            content: 'You are a business classifier. Respond only with valid JSON. Be fast and decisive.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.1,
-        max_tokens: 200
+        temperature: 0,
+        max_tokens: 100
       }),
+      signal: controller.signal
     })
     
+    clearTimeout(timeoutId);
+    
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`)
+      throw new Error(`OpenAI API error: ${response.status}`)
     }
     
     const data = await response.json()
     
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.error('Invalid OpenAI response format:', data)
-      throw new Error('Invalid response from OpenAI API')
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error('Invalid OpenAI response')
     }
     
     const result = JSON.parse(data.choices[0].message.content)
     
     return {
-      industry: result.industry || 'Business Services',
-      market: result.market || 'Professional Services',
+      industry: result.industry || 'Technology',
+      market: result.market || 'B2B SaaS',
       geography: result.geography || 'US'
     }
   } catch (error) {
+    clearTimeout(timeoutId);
     console.error('LLM classification error:', error)
-    // Fallback to basic classification
     return {
       industry: 'Technology',
       market: 'B2B SaaS',
@@ -293,50 +308,38 @@ Respond in JSON format:
   }
 }
 
-function generateTestPrompts(classification: BusinessClassification, businessName: string): TestPrompt[] {
-  const { industry, market, geography } = classification
-  
-  return [
+async function testPromptsInParallel(businessName: string): Promise<TestPrompt[]> {
+  const openaiKey = Deno.env.get('OPENAI_API_KEY')
+  if (!openaiKey) {
+    console.error('OpenAI API key not configured')
+    return []
+  }
+
+  // Reduced and optimized prompts for faster testing
+  const prompts: TestPrompt[] = [
     {
       type: "Top Tools",
-      prompt: `What are the leading ${industry.toLowerCase()} solutions ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      prompt: `List leading business software tools.`
     },
     {
-      type: "Alternatives",
-      prompt: `What are some alternatives to popular ${market.toLowerCase()} platforms?`
+      type: "Alternatives", 
+      prompt: `What are popular SaaS platform alternatives?`
     },
     {
       type: "Market Leaders",
-      prompt: `Which companies dominate the ${industry.toLowerCase()} space ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      prompt: `Which companies lead the technology space?`
     },
     {
-      type: "Industry Trends",
-      prompt: `What ${industry.toLowerCase()} companies are leading innovation?`
-    },
-    {
-      type: "Recommendation",
-      prompt: `Can you recommend ${industry.toLowerCase()} solutions for businesses?`
-    },
-    {
-      type: "Comparison",
-      prompt: `Compare the leading ${market.toLowerCase()} solutions available.`
-    },
-    {
-      type: "Use Case Match",
-      prompt: `Which platforms help businesses with ${market.toLowerCase()} needs?`
+      type: "Recommendations",
+      prompt: `Recommend business technology solutions.`
     }
-  ]
-}
+  ];
 
-async function testPromptsAgainstLLMs(prompts: TestPrompt[], businessName: string): Promise<TestPrompt[]> {
-  const openaiKey = Deno.env.get('OPENAI_API_KEY')
-  if (!openaiKey) {
-    throw new Error('OpenAI API key not configured')
-  }
-  
-  const results: TestPrompt[] = []
-  
-  for (const prompt of prompts) {
+  // Test all prompts in parallel with aggressive timeout
+  const testPromises = prompts.map(async (prompt) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout per prompt
+
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -352,54 +355,48 @@ async function testPromptsAgainstLLMs(prompts: TestPrompt[], businessName: strin
               content: prompt.prompt
             }
           ],
-          temperature: 0.3,
-          max_tokens: 500
+          temperature: 0.1,
+          max_tokens: 200 // Reduced for faster response
         }),
-      })
-      
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        console.error(`OpenAI API error for prompt ${prompt.type}: ${response.status} ${response.statusText}`)
-        results.push({
-          ...prompt,
-          response: 'error'
-        })
-        continue
+        console.error(`OpenAI API error for prompt ${prompt.type}: ${response.status}`);
+        return { ...prompt, response: 'error' };
       }
-      
-      const data = await response.json()
-      
-      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-        console.error(`Invalid OpenAI response format for prompt ${prompt.type}:`, data)
-        results.push({
-          ...prompt,
-          response: 'error'
-        })
-        continue
+
+      const data = await response.json();
+
+      if (!data.choices?.[0]?.message?.content) {
+        console.error(`Invalid OpenAI response for prompt ${prompt.type}`);
+        return { ...prompt, response: 'error' };
       }
-      
-      const content = data.choices[0].message.content.toLowerCase()
-      
-      // Check if business name is mentioned in response
-      const mentioned = content.includes(businessName.toLowerCase())
-      
-      results.push({
+
+      const content = data.choices[0].message.content.toLowerCase();
+      const mentioned = content.includes(businessName.toLowerCase());
+
+      return {
         ...prompt,
         response: mentioned ? 'mentioned' : 'not mentioned'
-      })
-      
-      // Rate limiting - wait between requests
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      };
+
     } catch (error) {
-      console.error(`Error testing prompt: ${prompt.type}`, error)
-      results.push({
-        ...prompt,
-        response: 'error'
-      })
+      clearTimeout(timeoutId);
+      console.error(`Error testing prompt: ${prompt.type}`, error);
+      return { ...prompt, response: 'error' };
     }
-  }
+  });
+
+  // Wait for all prompts to complete in parallel
+  const results = await Promise.allSettled(testPromises);
   
-  return results
+  return results.map(result => 
+    result.status === 'fulfilled' ? result.value : 
+    { type: 'error', prompt: 'failed', response: 'error' }
+  ).filter(result => result.type !== 'error');
 }
 
 function calculateScores(
@@ -411,7 +408,7 @@ function calculateScores(
   
   // Score based on mentions
   const mentionCount = promptResults.filter(p => p.response === 'mentioned').length
-  const mentionScore = (mentionCount / promptResults.length) * 3 // Max 3 points
+  const mentionScore = promptResults.length > 0 ? (mentionCount / promptResults.length) * 3 : 0 // Max 3 points
   
   // Score based on structured data
   const structuredDataScore = content.hasStructuredData ? 1 : 0
@@ -427,7 +424,7 @@ function calculateScores(
     'Healthcare': 6.1,
     'Finance': 6.5,
     'Retail': 6.3,
-    'Food & Beverage': 7.2
+    'Other': 6.0
   }
   
   const benchmarkScore = benchmarks[classification.industry] || 6.0
