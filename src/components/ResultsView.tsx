@@ -34,6 +34,9 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
     console.log("Sharing score...");
   };
 
+  // Round the GEO score to 1 decimal place for display
+  const displayScore = Math.round(results.geoScore * 10) / 10;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
@@ -106,13 +109,13 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
             </CardTitle>
             <div className="flex items-center justify-center space-x-8">
               <div className="text-center">
-                <div className={`text-6xl font-bold ${getScoreColor(results.geoScore)}`}>
-                  {results.geoScore}
+                <div className={`text-6xl font-bold ${getScoreColor(displayScore)}`}>
+                  {displayScore}
                 </div>
                 <div className="text-xl text-gray-600">/10</div>
-                <Badge className={`mt-2 ${getScoreBadgeColor(results.geoScore)}`}>
-                  {results.geoScore >= 8 ? "Excellent" : 
-                   results.geoScore >= 6 ? "Good" : "Needs Improvement"}
+                <Badge className={`mt-2 ${getScoreBadgeColor(displayScore)}`}>
+                  {displayScore >= 8 ? "Excellent" : 
+                   displayScore >= 6 ? "Good" : "Needs Improvement"}
                 </Badge>
               </div>
               
@@ -124,11 +127,11 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
                   Category Average: {results.benchmarkScore}/10
                 </div>
                 <div className={`text-sm font-medium ${
-                  results.geoScore > results.benchmarkScore ? 'text-green-600' : 'text-red-600'
+                  displayScore > results.benchmarkScore ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {results.geoScore > results.benchmarkScore ? 
-                    `${(results.geoScore - results.benchmarkScore).toFixed(1)} above average` :
-                    `${(results.benchmarkScore - results.geoScore).toFixed(1)} below average`
+                  {displayScore > results.benchmarkScore ? 
+                    `${(displayScore - results.benchmarkScore).toFixed(1)} above average` :
+                    `${(results.benchmarkScore - displayScore).toFixed(1)} below average`
                   }
                 </div>
               </div>
