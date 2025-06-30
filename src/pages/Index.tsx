@@ -9,7 +9,13 @@ import { ProcessingView } from "@/components/ProcessingView";
 import { ResultsView } from "@/components/ResultsView";
 import { CostMonitor } from "@/components/CostMonitor";
 import { UsageTracker } from "@/services/usageTracking";
-import { analyzeWebsite, generateDynamicStrengthsAndGaps, generateDynamicRecommendations, BusinessClassification, TestPrompt } from "@/services/realLlmAnalysis";
+import { 
+  analyzeWebsite, 
+  generateDynamicStrengthsAndGaps, 
+  generateDynamicRecommendations,
+  type BusinessClassification,
+  type TestPrompt
+} from "@/services/realLlmAnalysis";
 
 export type ScanStatus = 'idle' | 'processing' | 'completed' | 'error';
 

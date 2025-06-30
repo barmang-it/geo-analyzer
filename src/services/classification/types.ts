@@ -12,3 +12,12 @@ export interface TestPrompt {
   prompt: string;
   response?: string;
 }
+
+export interface AnalysisResult {
+  classification: BusinessClassification;
+  testPrompts: TestPrompt[];
+  geoScore: number;
+  benchmarkScore: number;
+  hasStructuredData: boolean;
+  llmMentions: number;
+}
