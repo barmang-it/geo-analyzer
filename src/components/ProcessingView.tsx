@@ -12,31 +12,31 @@ interface ProcessingViewProps {
 const processingSteps = [
   {
     id: 1,
-    title: "Scanning LLM Responses",
-    description: "Testing visibility across ChatGPT, Claude, and Perplexity",
-    icon: Search,
+    title: "Extracting Website Content",
+    description: "Analyzing your website's content, title, and structure",
+    icon: Globe,
     duration: 2000
   },
   {
     id: 2,
-    title: "Analyzing Website Structure",
-    description: "Checking for structured data and metadata",
-    icon: Globe,
-    duration: 1500
-  },
-  {
-    id: 3,
-    title: "Competitive Benchmarking",
-    description: "Comparing against industry leaders",
+    title: "Classifying Business",
+    description: "Using ChatGPT to categorize your industry and market",
     icon: Target,
     duration: 2000
   },
   {
+    id: 3,
+    title: "Testing LLM Visibility",
+    description: "Running test prompts through ChatGPT to check mentions",
+    icon: Search,
+    duration: 3000
+  },
+  {
     id: 4,
-    title: "Generating Recommendations",
-    description: "Creating personalized optimization strategies",
+    title: "Calculating GEO Score",
+    description: "Generating your AI discoverability score and recommendations",
     icon: TrendingUp,
-    duration: 2500
+    duration: 1500
   }
 ];
 
@@ -77,7 +77,7 @@ export const ProcessingView = ({ businessName }: ProcessingViewProps) => {
             Analyzing {businessName}
           </h1>
           <p className="text-gray-600">
-            Running comprehensive GEO analysis across multiple AI platforms
+            Running comprehensive GEO analysis using OpenAI ChatGPT
           </p>
         </div>
 
