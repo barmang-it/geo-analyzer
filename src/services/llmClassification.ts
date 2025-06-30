@@ -1,3 +1,4 @@
+
 export interface BusinessClassification {
   industry: string;
   market: string;
@@ -188,40 +189,48 @@ const performBusinessClassification = (businessName: string, websiteUrl: string)
 };
 
 export const calculateGeoScore = (classification: BusinessClassification, businessName: string, testPrompts: TestPrompt[]): { geoScore: number; benchmarkScore: number } => {
-  let baseScore = 5.0; // Starting baseline
-  
-  // Score adjustments based on business classification
-  const globalBrands = ['pepsi', 'coca-cola', 'apple', 'microsoft', 'tesla', 'google', 'amazon', 'akamai'];
-  const isGlobalBrand = globalBrands.some(brand => businessName.toLowerCase().includes(brand));
-  
-  if (isGlobalBrand) {
-    baseScore += 2.5; // Global brands get higher base score
-  }
-  
-  // Geography scoring
-  if (classification.geography === 'Global') {
-    baseScore += 1.0;
-  } else if (classification.geography === 'US') {
-    baseScore += 0.5;
-  }
-  
-  // Industry scoring
-  const highVisibilityIndustries = ['Technology', 'Food & Beverage'];
-  if (highVisibilityIndustries.includes(classification.industry)) {
-    baseScore += 0.5;
-  }
-  
-  // Calculate mentions from test prompts
+  // Calculate mentions from test prompts - this should be the primary factor
   const mentionCount = testPrompts.filter(prompt => 
     prompt.response && prompt.response.includes('Mentioned')
   ).length;
   
-  const mentionScore = (mentionCount / testPrompts.length) * 2; // Max 2 points from mentions
+  const mentionRate = testPrompts.length > 0 ? mentionCount / testPrompts.length : 0;
   
-  // Random variation for realism (-0.5 to +0.5)
-  const variation = (Math.random() - 0.5);
+  // Base score should primarily depend on mention rate
+  let baseScore = mentionRate * 6; // 0-6 points based on mention rate
   
-  const finalScore = Math.max(0, Math.min(10, baseScore + mentionScore + variation));
+  // Brand recognition bonus (but much smaller if no mentions)
+  const globalBrands = ['pepsi', 'coca-cola', 'apple', 'microsoft', 'tesla', 'google', 'amazon', 'akamai'];
+  const isGlobalBrand = globalBrands.some(brand => businessName.toLowerCase().includes(brand));
+  
+  if (isGlobalBrand && mentionRate > 0) {
+    baseScore += 1.5; // Only give brand bonus if there are actual mentions
+  } else if (isGlobalBrand && mentionRate === 0) {
+    baseScore += 0.3; // Very small bonus for recognized brands with no mentions
+  }
+  
+  // Geography scoring (reduced impact)
+  if (classification.geography === 'Global' && mentionRate > 0) {
+    baseScore += 0.8;
+  } else if (classification.geography === 'Global') {
+    baseScore += 0.2; // Small bonus even without mentions
+  } else if (classification.geography === 'US' && mentionRate > 0) {
+    baseScore += 0.4;
+  }
+  
+  // Industry scoring (minimal impact)
+  const highVisibilityIndustries = ['Technology', 'Food & Beverage'];
+  if (highVisibilityIndustries.includes(classification.industry) && mentionRate > 0) {
+    baseScore += 0.3;
+  }
+  
+  // Add small base score for having a website and being classifiable
+  baseScore += 1.0;
+  
+  // Small random variation for realism (-0.2 to +0.2)
+  const variation = (Math.random() - 0.5) * 0.4;
+  
+  const finalScore = Math.max(0, Math.min(10, baseScore + variation));
   
   // Calculate benchmark score based on category
   const benchmarkScores = {
