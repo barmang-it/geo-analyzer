@@ -4,6 +4,7 @@ export interface BusinessClassification {
   industry: string;
   market: string;
   geography: string;
+  domain: string;
 }
 
 export interface TestPrompt {
@@ -80,7 +81,7 @@ export const analyzeWebsite = async (
   }
 }
 
-// Enhanced mock analysis with fallback reason
+// Enhanced mock analysis with domain field
 const getMockAnalysis = (
   businessName: string, 
   websiteUrl: string, 
@@ -91,13 +92,14 @@ const getMockAnalysis = (
   const mockClassification: BusinessClassification = {
     industry: 'Technology',
     market: 'B2B SaaS',
-    geography: 'US'
+    geography: 'US',
+    domain: 'Software Solutions'
   }
   
   const mockPrompts: TestPrompt[] = [
     {
       type: "Top Tools",
-      prompt: "What are the leading technology solutions in the US?",
+      prompt: "What are the leading software solutions in the US?",
       response: Math.random() > 0.5 ? 'mentioned' : 'not mentioned'
     },
     {
@@ -107,17 +109,17 @@ const getMockAnalysis = (
     },
     {
       type: "Market Leaders",
-      prompt: "Which companies dominate the technology space in the US?",
+      prompt: "Which companies dominate the software solutions space in the US?",
       response: Math.random() > 0.5 ? 'mentioned' : 'not mentioned'
     },
     {
       type: "Industry Trends",
-      prompt: "What technology companies are leading innovation?",
+      prompt: "What software solutions companies are leading innovation in the US?",
       response: Math.random() > 0.5 ? 'mentioned' : 'not mentioned'
     },
     {
       type: "Recommendation",
-      prompt: "Can you recommend technology solutions for businesses?",
+      prompt: "Can you recommend software solutions for businesses in the US?",
       response: Math.random() > 0.5 ? 'mentioned' : 'not mentioned'
     }
   ]
@@ -201,7 +203,7 @@ export const generateDynamicRecommendations = (
   }
   
   if (mentionRate < 0.5) {
-    recommendations.push(`Create content comparing top ${classification.industry.toLowerCase()} tools to increase citations`)
+    recommendations.push(`Create content comparing top ${classification.domain.toLowerCase()} tools to increase citations`)
     recommendations.push(`Engage with ${classification.industry.toLowerCase()} communities and forums`)
   }
   

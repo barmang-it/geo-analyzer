@@ -1,9 +1,9 @@
-
 export interface BusinessClassification {
   industry: string;
   market: string;
   geography: string;
   category: string;
+  domain: string;
 }
 
 export interface TestPrompt {
@@ -32,6 +32,7 @@ export const classifyBusiness = async (businessName: string, websiteUrl: string)
 };
 
 const extractGeographyHints = (businessName: string, websiteUrl: string): string => {
+  // ... keep existing code (geography detection logic)
   const geoKeywords = {
     'Global': ['global', 'international', 'worldwide', 'pepsi', 'coca-cola', 'mcdonalds', 'apple', 'microsoft', 'google', 'akamai'],
     'US': ['.com', 'america', 'usa', 'united states', 'california', 'new york', 'texas', 'inc', 'corp'],
@@ -53,23 +54,25 @@ const extractGeographyHints = (businessName: string, websiteUrl: string): string
 const performBusinessClassification = (businessName: string, websiteUrl: string): BusinessClassification => {
   const text = `${businessName} ${websiteUrl}`.toLowerCase();
   
-  // Major technology companies classification
+  // Enhanced Akamai classification
   if (text.includes('akamai')) {
     return {
       industry: 'Technology',
       market: 'Cloud Infrastructure',
       geography: 'Global',
-      category: 'CDN & Edge Computing'
+      category: 'CDN & Edge Computing',
+      domain: 'Cybersecurity & Performance'
     };
   }
   
-  // Major brands classification
+  // Enhanced major brands classification with domains
   if (text.includes('pepsi') || text.includes('pepsico')) {
     return {
       industry: 'Food & Beverage',
       market: 'Consumer Packaged Goods',
       geography: 'Global',
-      category: 'Beverages & Snacks'
+      category: 'Beverages & Snacks',
+      domain: 'Consumer Products'
     };
   }
   
@@ -78,7 +81,8 @@ const performBusinessClassification = (businessName: string, websiteUrl: string)
       industry: 'Food & Beverage',
       market: 'Consumer Packaged Goods',
       geography: 'Global',
-      category: 'Beverages'
+      category: 'Beverages',
+      domain: 'Consumer Products'
     };
   }
   
@@ -87,7 +91,8 @@ const performBusinessClassification = (businessName: string, websiteUrl: string)
       industry: 'Technology',
       market: 'Consumer Electronics',
       geography: 'Global',
-      category: 'Consumer Technology'
+      category: 'Consumer Technology',
+      domain: 'Consumer Electronics'
     };
   }
   
@@ -96,7 +101,8 @@ const performBusinessClassification = (businessName: string, websiteUrl: string)
       industry: 'Technology',
       market: 'Enterprise Software',
       geography: 'Global',
-      category: 'Software & Cloud Services'
+      category: 'Software & Cloud Services',
+      domain: 'Enterprise Software'
     };
   }
   
@@ -105,17 +111,43 @@ const performBusinessClassification = (businessName: string, websiteUrl: string)
       industry: 'Automotive',
       market: 'Electric Vehicles',
       geography: 'Global',
-      category: 'Electric Vehicles & Energy'
+      category: 'Electric Vehicles & Energy',
+      domain: 'Automotive Technology'
     };
   }
   
-  // Industry-specific classification with enhanced technology detection
+  // Enhanced domain detection for cybersecurity
+  if (text.includes('security') || text.includes('cyber') || text.includes('firewall') || 
+      text.includes('threat') || text.includes('malware') || text.includes('encryption') ||
+      text.includes('ddos') || text.includes('vulnerability') || text.includes('compliance')) {
+    return {
+      industry: 'Technology',
+      market: 'Cybersecurity',
+      geography: 'US',
+      category: 'Security Solutions',
+      domain: 'Cybersecurity'
+    };
+  }
+  
+  // Enhanced domain detection for specific technology areas
+  if (text.includes('cdn') || text.includes('edge') || text.includes('performance') || text.includes('optimization')) {
+    return {
+      industry: 'Technology',
+      market: 'Cloud Infrastructure',
+      geography: 'US',
+      category: 'Performance Solutions',
+      domain: 'Performance & CDN'
+    };
+  }
+  
+  // Enhanced industry-specific classification with domains
   if (text.includes('restaurant') || text.includes('food') || text.includes('beverage') || text.includes('drink')) {
     return {
       industry: 'Food & Beverage',
       market: 'Restaurant & Food Service',
       geography: 'US',
-      category: 'Food & Dining'
+      category: 'Food & Dining',
+      domain: 'Food Service'
     };
   }
   
@@ -124,7 +156,8 @@ const performBusinessClassification = (businessName: string, websiteUrl: string)
       industry: 'Financial Services',
       market: 'Banking & Fintech',
       geography: 'US',
-      category: 'Financial Technology'
+      category: 'Financial Technology',
+      domain: 'Financial Services'
     };
   }
   
@@ -133,7 +166,8 @@ const performBusinessClassification = (businessName: string, websiteUrl: string)
       industry: 'Healthcare',
       market: 'Digital Health',
       geography: 'US',
-      category: 'Healthcare Technology'
+      category: 'Healthcare Technology',
+      domain: 'Healthcare'
     };
   }
   
@@ -142,22 +176,24 @@ const performBusinessClassification = (businessName: string, websiteUrl: string)
       industry: 'Retail',
       market: 'E-commerce',
       geography: 'US',
-      category: 'Retail & Commerce'
+      category: 'Retail & Commerce',
+      domain: 'E-commerce'
     };
   }
   
-  // Enhanced technology classification with more keywords
+  // Enhanced technology classification with more specific domains
   if (text.includes('tech') || text.includes('software') || text.includes('app') || text.includes('saas') ||
       text.includes('cloud') || text.includes('api') || text.includes('platform') || text.includes('data') ||
-      text.includes('analytics') || text.includes('ai') || text.includes('ml') || text.includes('cyber') ||
-      text.includes('security') || text.includes('infrastructure') || text.includes('computing') ||
+      text.includes('analytics') || text.includes('ai') || text.includes('ml') || 
+      text.includes('infrastructure') || text.includes('computing') ||
       text.includes('digital') || text.includes('internet') || text.includes('web') || text.includes('network') ||
-      text.includes('server') || text.includes('hosting') || text.includes('cdn') || text.includes('edge')) {
+      text.includes('server') || text.includes('hosting')) {
     return {
       industry: 'Technology',
       market: 'B2B SaaS',
       geography: 'US',
-      category: 'Software & Technology'
+      category: 'Software & Technology',
+      domain: 'Software Solutions'
     };
   }
   
@@ -166,7 +202,8 @@ const performBusinessClassification = (businessName: string, websiteUrl: string)
       industry: 'Automotive',
       market: 'Auto Manufacturing',
       geography: 'US',
-      category: 'Automotive'
+      category: 'Automotive',
+      domain: 'Automotive'
     };
   }
   
@@ -175,7 +212,8 @@ const performBusinessClassification = (businessName: string, websiteUrl: string)
       industry: 'Energy',
       market: 'Energy & Utilities',
       geography: 'US',
-      category: 'Energy & Utilities'
+      category: 'Energy & Utilities',
+      domain: 'Energy'
     };
   }
   
@@ -184,7 +222,8 @@ const performBusinessClassification = (businessName: string, websiteUrl: string)
     industry: 'Business Services',
     market: 'Professional Services',
     geography: 'US',
-    category: 'Business Services'
+    category: 'Business Services',
+    domain: 'Professional Services'
   };
 };
 
@@ -254,16 +293,54 @@ export const calculateGeoScore = (classification: BusinessClassification, busine
 };
 
 export const generateTestPrompts = (classification: BusinessClassification, businessName: string): TestPrompt[] => {
-  const { industry, market, geography, category } = classification;
+  const { industry, market, geography, category, domain } = classification;
   
-  // Generate more specific prompts based on the classification
+  // Generate domain-specific prompts based on the business domain
   const prompts: TestPrompt[] = [];
   
-  if (industry === 'Technology') {
+  if (domain === 'Cybersecurity & Performance' || domain === 'Cybersecurity') {
+    prompts.push(
+      {
+        type: "Security Tools",
+        prompt: `What are the top cybersecurity platforms for protecting against DDoS attacks ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      },
+      {
+        type: "CDN Solutions",
+        prompt: `Which content delivery networks provide the best performance optimization ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      },
+      {
+        type: "Edge Computing",
+        prompt: `What are the leading edge computing platforms for web performance ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      },
+      {
+        type: "Web Security",
+        prompt: `Which companies provide comprehensive web application security solutions ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      },
+      {
+        type: "Performance Solutions",
+        prompt: `What are the best website performance and acceleration services available ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      }
+    );
+  } else if (domain === 'Performance & CDN') {
+    prompts.push(
+      {
+        type: "CDN Providers",
+        prompt: `What are the leading content delivery network providers ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      },
+      {
+        type: "Performance Tools",
+        prompt: `Which platforms offer the best website performance optimization ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      },
+      {
+        type: "Edge Solutions",
+        prompt: `What are the top edge computing solutions for businesses ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      }
+    );
+  } else if (industry === 'Technology') {
     prompts.push(
       {
         type: "Top Tools",
-        prompt: `What are the leading ${category.toLowerCase()} solutions ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+        prompt: `What are the leading ${domain.toLowerCase()} solutions ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
       },
       {
         type: "Alternatives",
@@ -275,7 +352,7 @@ export const generateTestPrompts = (classification: BusinessClassification, busi
       },
       {
         type: "Industry Trends",
-        prompt: `What ${industry.toLowerCase()} companies are leading innovation ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+        prompt: `What ${domain.toLowerCase()} companies are leading innovation ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
       },
       {
         type: "Use Case Match",
@@ -306,11 +383,11 @@ export const generateTestPrompts = (classification: BusinessClassification, busi
       }
     );
   } else {
-    // Generic prompts for other industries
+    // Generic prompts for other industries, but still domain-specific
     prompts.push(
       {
         type: "Top Tools",
-        prompt: `What are the best ${industry.toLowerCase()} tools for businesses ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+        prompt: `What are the best ${domain.toLowerCase()} tools for businesses ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
       },
       {
         type: "Alternatives",
@@ -335,7 +412,7 @@ export const generateTestPrompts = (classification: BusinessClassification, busi
   prompts.push(
     {
       type: "Recommendation",
-      prompt: `Can you recommend ${industry.toLowerCase()} solutions for businesses ${geography === 'Global' ? 'operating globally' : `in ${geography}`}?`
+      prompt: `Can you recommend ${domain.toLowerCase()} solutions for businesses ${geography === 'Global' ? 'operating globally' : `in ${geography}`}?`
     },
     {
       type: "Comparison",
@@ -355,6 +432,7 @@ export const generateTestPrompts = (classification: BusinessClassification, busi
 };
 
 const getMentionProbability = (businessName: string, classification: BusinessClassification): number => {
+  // ... keep existing code (mention probability logic)
   const globalBrands = ['pepsi', 'coca-cola', 'apple', 'microsoft', 'tesla', 'google', 'amazon', 'akamai'];
   const isGlobalBrand = globalBrands.some(brand => businessName.toLowerCase().includes(brand));
   

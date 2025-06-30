@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from '../_shared/cors.ts'
 
@@ -28,6 +27,7 @@ interface BusinessClassification {
   industry: string;
   market: string;
   geography: string;
+  domain: string;
 }
 
 interface TestPrompt {
@@ -93,7 +93,7 @@ serve(async (req) => {
     const [websiteContent, classificationResult, promptTestResults] = await Promise.allSettled([
       extractWebsiteContent(websiteUrl),
       classifyBusinessWithLLM(businessName, websiteUrl),
-      testPromptsInParallel(businessName)
+      testPromptsInParallel(businessName, websiteUrl)
     ]);
 
     // Handle results with fallbacks
@@ -102,7 +102,7 @@ serve(async (req) => {
     };
 
     const classification = classificationResult.status === 'fulfilled' ? classificationResult.value : {
-      industry: 'Technology', market: 'B2B SaaS', geography: 'US'
+      industry: 'Technology', market: 'B2B SaaS', geography: 'US', domain: 'Software Solutions'
     };
 
     const promptResults = promptTestResults.status === 'fulfilled' ? promptTestResults.value : [];
@@ -239,15 +239,16 @@ async function classifyBusinessWithLLM(
     throw new Error('OpenAI API key not configured')
   }
   
-  const prompt = `Classify this business quickly:
+  const prompt = `Classify this business quickly with enhanced domain detection:
 Business: ${businessName}
 Website: ${websiteUrl}
 
 Return JSON only:
 {
   "industry": "Technology|Healthcare|Finance|Retail|Other",
-  "market": "B2B SaaS|E-commerce|Consumer|Enterprise|Other", 
-  "geography": "Global|US|EU|Other"
+  "market": "B2B SaaS|E-commerce|Consumer|Enterprise|Cybersecurity|Cloud Infrastructure|Other", 
+  "geography": "Global|US|EU|Other",
+  "domain": "Cybersecurity & Performance|Performance & CDN|Software Solutions|Consumer Electronics|Financial Services|Healthcare|E-commerce|Professional Services|Other"
 }`
 
   const controller = new AbortController();
@@ -265,7 +266,7 @@ Return JSON only:
         messages: [
           {
             role: 'system',
-            content: 'You are a business classifier. Respond only with valid JSON. Be fast and decisive.'
+            content: 'You are a business classifier. Focus on detecting specific domains like cybersecurity, CDN, performance optimization. Respond only with valid JSON. Be fast and decisive.'
           },
           {
             role: 'user',
@@ -273,7 +274,7 @@ Return JSON only:
           }
         ],
         temperature: 0,
-        max_tokens: 100
+        max_tokens: 150
       }),
       signal: controller.signal
     })
@@ -295,7 +296,8 @@ Return JSON only:
     return {
       industry: result.industry || 'Technology',
       market: result.market || 'B2B SaaS',
-      geography: result.geography || 'US'
+      geography: result.geography || 'US',
+      domain: result.domain || 'Software Solutions'
     }
   } catch (error) {
     clearTimeout(timeoutId);
@@ -303,37 +305,80 @@ Return JSON only:
     return {
       industry: 'Technology',
       market: 'B2B SaaS',
-      geography: 'US'
+      geography: 'US',
+      domain: 'Software Solutions'
     }
   }
 }
 
-async function testPromptsInParallel(businessName: string): Promise<TestPrompt[]> {
+async function testPromptsInParallel(businessName: string, websiteUrl: string): Promise<TestPrompt[]> {
   const openaiKey = Deno.env.get('OPENAI_API_KEY')
   if (!openaiKey) {
     console.error('OpenAI API key not configured')
     return []
   }
 
-  // Reduced and optimized prompts for faster testing
-  const prompts: TestPrompt[] = [
-    {
-      type: "Top Tools",
-      prompt: `List leading business software tools.`
-    },
-    {
-      type: "Alternatives", 
-      prompt: `What are popular SaaS platform alternatives?`
-    },
-    {
-      type: "Market Leaders",
-      prompt: `Which companies lead the technology space?`
-    },
-    {
-      type: "Recommendations",
-      prompt: `Recommend business technology solutions.`
-    }
-  ];
+  // Get classification to generate domain-specific prompts
+  const classification = await classifyBusinessWithLLM(businessName, websiteUrl);
+  
+  // Generate domain-specific prompts
+  let prompts: TestPrompt[] = [];
+  
+  if (classification.domain === 'Cybersecurity & Performance' || classification.domain === 'Cybersecurity') {
+    prompts = [
+      {
+        type: "Security Tools",
+        prompt: `What are the top cybersecurity platforms for DDoS protection?`
+      },
+      {
+        type: "CDN Solutions", 
+        prompt: `Which CDN providers offer the best performance optimization?`
+      },
+      {
+        type: "Edge Computing",
+        prompt: `What are leading edge computing platforms for web performance?`
+      },
+      {
+        type: "Web Security",
+        prompt: `Which companies provide comprehensive web application security?`
+      }
+    ];
+  } else if (classification.domain === 'Performance & CDN') {
+    prompts = [
+      {
+        type: "CDN Providers",
+        prompt: `What are the leading content delivery network providers?`
+      },
+      {
+        type: "Performance Tools",
+        prompt: `Which platforms offer the best website performance optimization?`
+      },
+      {
+        type: "Edge Solutions",
+        prompt: `What are the top edge computing solutions for businesses?`
+      }
+    ];
+  } else {
+    // Generic but still domain-aware prompts
+    prompts = [
+      {
+        type: "Top Tools",
+        prompt: `List leading ${classification.domain.toLowerCase()} solutions.`
+      },
+      {
+        type: "Alternatives", 
+        prompt: `What are popular ${classification.market.toLowerCase()} alternatives?`
+      },
+      {
+        type: "Market Leaders",
+        prompt: `Which companies lead the ${classification.domain.toLowerCase()} space?`
+      },
+      {
+        type: "Recommendations",
+        prompt: `Recommend ${classification.domain.toLowerCase()} solutions for businesses.`
+      }
+    ];
+  }
 
   // Test all prompts in parallel with aggressive timeout
   const testPromises = prompts.map(async (prompt) => {

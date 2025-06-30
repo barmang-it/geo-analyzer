@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, CheckCircle, Download, Share, RotateCcw, TrendingUp, Target, Globe, Search, MapPin, Building } from "lucide-react";
+import { AlertTriangle, CheckCircle, Download, Share, RotateCcw, TrendingUp, Target, Globe, Search, MapPin, Building, Tag } from "lucide-react";
 import { ScanData, ScanResults } from "@/pages/Index";
 
 interface ResultsViewProps {
@@ -77,7 +77,7 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-4 gap-4">
               <div className="text-center">
                 <div className="text-sm text-gray-500 mb-1">Industry</div>
                 <Badge variant="outline" className="text-sm font-medium">
@@ -95,6 +95,13 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
                 <Badge variant="outline" className="text-sm font-medium">
                   <MapPin className="w-3 h-3 mr-1" />
                   {results.classification.geography}
+                </Badge>
+              </div>
+              <div className="text-center">
+                <div className="text-sm text-gray-500 mb-1">Domain</div>
+                <Badge variant="outline" className="text-sm font-medium">
+                  <Tag className="w-3 h-3 mr-1" />
+                  {results.classification.domain}
                 </Badge>
               </div>
             </div>
@@ -151,7 +158,7 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
                 {results.llmMentions}
               </div>
               <p className="text-sm text-gray-600">
-                Across 7 test prompts
+                Across {results.testPrompts.length} test prompts
               </p>
             </CardContent>
           </Card>
@@ -194,10 +201,10 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
           <CardHeader>
             <CardTitle className="flex items-center text-xl font-bold text-gray-800">
               <Search className="w-5 h-5 mr-2 text-purple-600" />
-              Test Prompts Used
+              Domain-Specific Test Prompts
             </CardTitle>
             <p className="text-gray-600">
-              These prompts were customized based on your business classification and tested across multiple LLMs
+              These prompts were customized for your {results.classification.domain.toLowerCase()} business and tested across multiple LLMs
             </p>
           </CardHeader>
           <CardContent>
@@ -210,11 +217,11 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
                     </Badge>
                     {prompt.response && (
                       <div className={`text-xs px-2 py-1 rounded-full ${
-                        prompt.response.includes('Mentioned') 
+                        prompt.response.includes('mentioned') 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {prompt.response.includes('Mentioned') ? '✓ Found' : '✗ Not Found'}
+                        {prompt.response.includes('mentioned') ? '✓ Found' : '✗ Not Found'}
                       </div>
                     )}
                   </div>
