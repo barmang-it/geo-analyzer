@@ -15,17 +15,21 @@ export async function classifyBusinessWithLLM(
     throw new Error('OpenAI API key not configured')
   }
   
-  const prompt = `Classify this business quickly with enhanced domain detection:
+  const prompt = `Classify this business with enhanced conglomerate detection:
 Business: ${businessName}
 Website: ${websiteUrl}
 
+Identify if this is a conglomerate operating across multiple industries. Look for keywords like "holdings", "group", "industries", "diversified", or major conglomerates like Reliance Industries, Berkshire Hathaway, Samsung Group, Tata Group, Siemens, GE.
+
 Return JSON only:
 {
-  "industry": "Technology|Healthcare|Finance|Retail|Other",
-  "market": "B2B SaaS|E-commerce|Consumer|Enterprise|Cybersecurity|Cloud Infrastructure|Other", 
-  "geography": "Global|US|EU|Other",
-  "domain": "Cybersecurity & Performance|Performance & CDN|Software Solutions|Consumer Electronics|Financial Services|Healthcare|E-commerce|Professional Services|Other"
-}`
+  "industry": "Conglomerate|Technology|Healthcare|Finance|Retail|Energy|Automotive|Food & Beverage|Other",
+  "market": "Multi-Industry|B2B SaaS|E-commerce|Consumer|Enterprise|Cybersecurity|Cloud Infrastructure|Other", 
+  "geography": "Global|US|EU|Asia|Other",
+  "domain": "Diversified Conglomerate|Investment Conglomerate|Industrial Conglomerate|Technology Conglomerate|Business Conglomerate|Cybersecurity & Performance|Performance & CDN|Software Solutions|Consumer Electronics|Financial Services|Healthcare|E-commerce|Professional Services|Other"
+}
+
+For conglomerates, use specific category descriptions like "Energy, Petrochemicals, Retail & Telecom" for Reliance or "Electronics, Heavy Industries & Financial Services" for Samsung.`
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
@@ -42,7 +46,7 @@ Return JSON only:
         messages: [
           {
             role: 'system',
-            content: 'You are a business classifier. Focus on detecting specific domains like cybersecurity, CDN, performance optimization. Respond only with valid JSON. Be fast and decisive.'
+            content: 'You are a business classifier specializing in identifying conglomerates and diversified business groups. Focus on detecting multi-industry operations and cross-sector presence. Respond only with valid JSON. Be fast and decisive about conglomerate classification.'
           },
           {
             role: 'user',
@@ -50,7 +54,7 @@ Return JSON only:
           }
         ],
         temperature: 0,
-        max_tokens: 150
+        max_tokens: 200
       }),
       signal: controller.signal
     })

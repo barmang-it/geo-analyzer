@@ -4,6 +4,82 @@ import { BusinessClassification } from './types';
 export const performBusinessClassification = (businessName: string, websiteUrl: string): BusinessClassification => {
   const text = `${businessName} ${websiteUrl}`.toLowerCase();
   
+  // Enhanced conglomerate detection
+  const conglomerateKeywords = ['holdings', 'group', 'corporation', 'industries', 'conglomerate', 'diversified'];
+  const isConglomerate = conglomerateKeywords.some(keyword => text.includes(keyword));
+  
+  // Major conglomerates with specific classification
+  if (text.includes('reliance') && (text.includes('industries') || text.includes('ril'))) {
+    return {
+      industry: 'Conglomerate',
+      market: 'Multi-Industry',
+      geography: 'Global',
+      category: 'Energy, Petrochemicals, Retail & Telecom',
+      domain: 'Diversified Conglomerate'
+    };
+  }
+  
+  if (text.includes('berkshire') && text.includes('hathaway')) {
+    return {
+      industry: 'Conglomerate',
+      market: 'Multi-Industry',
+      geography: 'Global',
+      category: 'Insurance, Energy & Consumer Goods',
+      domain: 'Investment Conglomerate'
+    };
+  }
+  
+  if (text.includes('general') && text.includes('electric')) {
+    return {
+      industry: 'Conglomerate',
+      market: 'Multi-Industry',
+      geography: 'Global',
+      category: 'Energy, Healthcare & Aviation',
+      domain: 'Industrial Conglomerate'
+    };
+  }
+  
+  if (text.includes('samsung') && !text.includes('electronics')) {
+    return {
+      industry: 'Conglomerate',
+      market: 'Multi-Industry',
+      geography: 'Global',
+      category: 'Electronics, Heavy Industries & Financial Services',
+      domain: 'Technology Conglomerate'
+    };
+  }
+  
+  if (text.includes('siemens')) {
+    return {
+      industry: 'Conglomerate',
+      market: 'Multi-Industry',
+      geography: 'Global',
+      category: 'Industrial Automation, Energy & Healthcare',
+      domain: 'Industrial Technology Conglomerate'
+    };
+  }
+  
+  if (text.includes('tata') && (text.includes('group') || text.includes('sons'))) {
+    return {
+      industry: 'Conglomerate',
+      market: 'Multi-Industry',
+      geography: 'Global',
+      category: 'Steel, Automotive, IT Services & Consumer Goods',
+      domain: 'Diversified Business Group'
+    };
+  }
+  
+  // Generic conglomerate detection
+  if (isConglomerate) {
+    return {
+      industry: 'Conglomerate',
+      market: 'Multi-Industry',
+      geography: 'US',
+      category: 'Diversified Holdings',
+      domain: 'Business Conglomerate'
+    };
+  }
+  
   // Enhanced Akamai classification
   if (text.includes('akamai')) {
     return {

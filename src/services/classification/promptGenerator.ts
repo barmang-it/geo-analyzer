@@ -11,7 +11,41 @@ export const generateTestPrompts = (
   // Generate domain-specific prompts based on the business domain
   const prompts: TestPrompt[] = [];
   
-  if (domain === 'Cybersecurity & Performance' || domain === 'Cybersecurity') {
+  // Conglomerate-specific prompts with multi-industry focus
+  if (industry === 'Conglomerate') {
+    const geographyText = geography === 'Global' ? 'worldwide' : `in ${geography}`;
+    
+    prompts.push(
+      {
+        type: "Multi-Industry Leaders",
+        prompt: `Which companies operate across ${category.toLowerCase()} sectors ${geographyText}?`
+      },
+      {
+        type: "Diversified Holdings",
+        prompt: `What are the leading diversified business groups with interests in ${category.toLowerCase()} ${geographyText}?`
+      },
+      {
+        type: "Conglomerate Comparison",
+        prompt: `Compare major conglomerates operating in ${market.toLowerCase()} markets ${geographyText}.`
+      },
+      {
+        type: "Cross-Sector Operations",
+        prompt: `Which ${domain.toLowerCase()} companies have the broadest business portfolio ${geographyText}?`
+      },
+      {
+        type: "Industry Diversification",
+        prompt: `What companies successfully diversified across ${category.toLowerCase()} industries ${geographyText}?`
+      },
+      {
+        type: "Market Expansion",
+        prompt: `Which business groups expanded from one industry to dominate ${category.toLowerCase()} ${geographyText}?`
+      },
+      {
+        type: "Investment Strategy",
+        prompt: `What are the most successful ${domain.toLowerCase()} strategies for ${market.toLowerCase()} expansion ${geographyText}?`
+      }
+    );
+  } else if (domain === 'Cybersecurity & Performance' || domain === 'Cybersecurity') {
     prompts.push(
       {
         type: "Security Tools",
@@ -121,7 +155,7 @@ export const generateTestPrompts = (
     );
   }
   
-  // Add recommendation and comparison prompts
+  // Add recommendation and comparison prompts (always include these)
   prompts.push(
     {
       type: "Recommendation",

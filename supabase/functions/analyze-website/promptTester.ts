@@ -27,7 +27,33 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
   // Generate domain-specific prompts
   let prompts: TestPrompt[] = [];
   
-  if (classification.domain === 'Cybersecurity & Performance' || classification.domain === 'Cybersecurity') {
+  // Conglomerate-specific prompts with multi-industry focus
+  if (classification.industry === 'Conglomerate') {
+    const geographyText = classification.geography === 'Global' ? 'worldwide' : `in ${classification.geography}`;
+    
+    prompts = [
+      {
+        type: "Multi-Industry Leaders",
+        prompt: `Which companies operate across multiple business sectors ${geographyText}?`
+      },
+      {
+        type: "Diversified Holdings", 
+        prompt: `What are the leading diversified business groups ${geographyText}?`
+      },
+      {
+        type: "Conglomerate Comparison",
+        prompt: `Compare major conglomerates operating in ${classification.market.toLowerCase()} markets ${geographyText}.`
+      },
+      {
+        type: "Cross-Sector Operations",
+        prompt: `Which ${classification.domain.toLowerCase()} companies have the broadest business portfolio ${geographyText}?`
+      },
+      {
+        type: "Industry Diversification",
+        prompt: `What companies successfully diversified across multiple industries ${geographyText}?`
+      }
+    ];
+  } else if (classification.domain === 'Cybersecurity & Performance' || classification.domain === 'Cybersecurity') {
     prompts = [
       {
         type: "Security Tools",
