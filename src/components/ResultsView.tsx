@@ -1,8 +1,10 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, CheckCircle, Download, Share, RotateCcw, TrendingUp, Target, Globe, Search, MapPin, Building, Tag } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AlertTriangle, CheckCircle, Download, Share, RotateCcw, TrendingUp, Target, Globe, Search, MapPin, Building, Tag, Factory, ShoppingCart } from "lucide-react";
 import { ScanData, ScanResults } from "@/pages/Index";
 
 interface ResultsViewProps {
@@ -36,6 +38,26 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
 
   // Round the GEO score to 1 decimal place for display
   const displayScore = Math.round(results.geoScore * 10) / 10;
+
+  // Helper function to truncate text with tooltip
+  const TruncatedText = ({ text, maxLength = 20 }: { text: string; maxLength?: number }) => {
+    if (text.length <= maxLength) {
+      return <span>{text}</span>;
+    }
+
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="cursor-help">{text.substring(0, maxLength)}...</span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="max-w-xs">{text}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -77,31 +99,44 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-sm text-gray-500 mb-1">Industry</div>
-                <Badge variant="outline" className="text-sm font-medium">
-                  {results.classification.industry}
+            <div className="grid md:grid-cols-4 gap-6">
+              <div className="text-center space-y-2">
+                <div className="flex items-center justify-center mb-2">
+                  <Factory className="w-5 h-5 text-blue-600 mr-2" />
+                  <span className="text-sm font-medium text-gray-500">Industry</span>
+                </div>
+                <Badge variant="outline" className="text-sm font-medium px-3 py-1 max-w-full">
+                  <TruncatedText text={results.classification.industry} maxLength={18} />
                 </Badge>
               </div>
-              <div className="text-center">
-                <div className="text-sm text-gray-500 mb-1">Market</div>
-                <Badge variant="outline" className="text-sm font-medium">
-                  {results.classification.market}
+              
+              <div className="text-center space-y-2">
+                <div className="flex items-center justify-center mb-2">
+                  <ShoppingCart className="w-5 h-5 text-purple-600 mr-2" />
+                  <span className="text-sm font-medium text-gray-500">Market</span>
+                </div>
+                <Badge variant="outline" className="text-sm font-medium px-3 py-1 max-w-full">
+                  <TruncatedText text={results.classification.market} maxLength={18} />
                 </Badge>
               </div>
-              <div className="text-center">
-                <div className="text-sm text-gray-500 mb-1">Geography</div>
-                <Badge variant="outline" className="text-sm font-medium">
-                  <MapPin className="w-3 h-3 mr-1" />
-                  {results.classification.geography}
+              
+              <div className="text-center space-y-2">
+                <div className="flex items-center justify-center mb-2">
+                  <MapPin className="w-5 h-5 text-green-600 mr-2" />
+                  <span className="text-sm font-medium text-gray-500">Geography</span>
+                </div>
+                <Badge variant="outline" className="text-sm font-medium px-3 py-1 max-w-full">
+                  <TruncatedText text={results.classification.geography} maxLength={15} />
                 </Badge>
               </div>
-              <div className="text-center">
-                <div className="text-sm text-gray-500 mb-1">Domain</div>
-                <Badge variant="outline" className="text-sm font-medium">
-                  <Tag className="w-3 h-3 mr-1" />
-                  {results.classification.domain}
+              
+              <div className="text-center space-y-2">
+                <div className="flex items-center justify-center mb-2">
+                  <Tag className="w-5 h-5 text-orange-600 mr-2" />
+                  <span className="text-sm font-medium text-gray-500">Domain</span>
+                </div>
+                <Badge variant="outline" className="text-sm font-medium px-3 py-1 max-w-full">
+                  <TruncatedText text={results.classification.domain} maxLength={18} />
                 </Badge>
               </div>
             </div>
