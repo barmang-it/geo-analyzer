@@ -23,10 +23,10 @@ Identify if this is a conglomerate operating across multiple industries. Look fo
 
 Return JSON only:
 {
-  "industry": "Conglomerate|Technology|Healthcare|Finance|Retail|Energy|Automotive|Food & Beverage|Other",
-  "market": "Multi-Industry|B2B SaaS|E-commerce|Consumer|Enterprise|Cybersecurity|Cloud Infrastructure|Other", 
-  "geography": "Global|US|EU|Asia|Other",
-  "domain": "Diversified Conglomerate|Investment Conglomerate|Industrial Conglomerate|Technology Conglomerate|Business Conglomerate|Cybersecurity & Performance|Performance & CDN|Software Solutions|Consumer Electronics|Financial Services|Healthcare|E-commerce|Professional Services|Other"
+  "industry": "Conglomerate OR Technology OR Healthcare OR Finance OR Retail OR Energy OR Automotive OR Food & Beverage OR Other",
+  "market": "Multi-Industry OR B2B SaaS OR E-commerce OR Consumer OR Enterprise OR Cybersecurity OR Cloud Infrastructure OR Other", 
+  "geography": "Global OR US OR EU OR Asia OR Other",
+  "domain": "Diversified Conglomerate OR Investment Conglomerate OR Industrial Conglomerate OR Technology Conglomerate OR Business Conglomerate OR Cybersecurity & Performance OR Performance & CDN OR Software Solutions OR Consumer Electronics OR Financial Services OR Healthcare OR E-commerce OR Professional Services OR Other"
 }
 
 For conglomerates, use specific category descriptions like "Energy, Petrochemicals, Retail & Telecom" for Reliance or "Electronics, Heavy Industries & Financial Services" for Samsung.`
