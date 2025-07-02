@@ -74,22 +74,18 @@ serve(async (req) => {
     
     console.log(`Processing analysis for ${businessName} (${websiteUrl}) - Usage: ${todayUsage + 1}/${DAILY_LIMIT}`)
     
-    // Extract website content first
-    const websiteContent = await extractWebsiteContent(websiteUrl);
-    console.log('Website content extracted:', { 
-      titleLength: websiteContent.title.length,
-      descriptionLength: websiteContent.description.length,
-      contentLength: websiteContent.content.length,
-      hasStructuredData: websiteContent.hasStructuredData
-    });
-    
-    // Start classification and prompt testing operations in parallel, now with website content
-    const [classificationResult, promptTestResults] = await Promise.allSettled([
-      classifyBusinessWithLLM(businessName, websiteUrl, websiteContent),
+    // Start all operations in parallel for maximum speed
+    const [websiteContentResult, classificationResult, promptTestResults] = await Promise.allSettled([
+      extractWebsiteContent(websiteUrl),
+      classifyBusinessWithLLM(businessName, websiteUrl),
       testPromptsInParallel(businessName, websiteUrl)
     ]);
-
+    
     // Handle results with fallbacks
+    const websiteContent = websiteContentResult.status === 'fulfilled' ? websiteContentResult.value : {
+      title: '', description: '', content: '', hasStructuredData: false
+    };
+    
     const classification = classificationResult.status === 'fulfilled' ? classificationResult.value : {
       industry: 'Technology', market: 'B2B SaaS', geography: 'US', domain: 'Software Solutions'
     };
@@ -150,7 +146,7 @@ serve(async (req) => {
         circuitBreakerTriggered: circuitBreakerOpen
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       },
     )

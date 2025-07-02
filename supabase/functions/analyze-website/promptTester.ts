@@ -157,10 +157,10 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
     ];
   }
 
-  // Test all 7 prompts in parallel with aggressive timeout
+  // Test all 7 prompts in parallel with more aggressive optimization
   const testPromises = prompts.map(async (prompt) => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout per prompt
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // Reduced to 2s timeout
 
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -177,8 +177,9 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
               content: prompt.prompt
             }
           ],
-          temperature: 0.1,
-          max_tokens: 200 // Reduced for faster response
+          temperature: 0,
+          max_tokens: 150, // Further reduced for faster response
+          top_p: 0.1 // More focused responses
         }),
         signal: controller.signal
       });
@@ -186,7 +187,7 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        console.error(`OpenAI API error for prompt ${prompt.type}: ${response.status}`);
+        console.error(`OpenAI API error for prompt ${prompt.type}: ${response.status} ${response.statusText}`);
         return { ...prompt, response: 'error' };
       }
 
@@ -207,16 +208,20 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
 
     } catch (error) {
       clearTimeout(timeoutId);
-      console.error(`Error testing prompt: ${prompt.type}`, error);
+      if (error.name === 'AbortError') {
+        console.error(`Timeout for prompt: ${prompt.type}`);
+      } else {
+        console.error(`Error testing prompt: ${prompt.type}`, error.message);
+      }
       return { ...prompt, response: 'error' };
     }
   });
 
-  // Wait for all 7 prompts to complete in parallel
+  // Wait for all 7 prompts to complete in parallel with faster timeout
   const results = await Promise.allSettled(testPromises);
   
-  return results.map(result => 
+  return results.map((result, index) => 
     result.status === 'fulfilled' ? result.value : 
-    { type: 'error', prompt: 'failed', response: 'error' }
-  ).filter(result => result.type !== 'error');
+    { type: prompts[index].type, prompt: prompts[index].prompt, response: 'error' }
+  );
 }
