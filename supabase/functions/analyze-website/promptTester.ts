@@ -24,7 +24,7 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
   // Get classification to generate domain-specific prompts
   const classification = await classifyBusinessWithLLM(businessName, websiteUrl);
   
-  // Generate domain-specific prompts
+  // Generate domain-specific prompts - now 7 prompts total
   let prompts: TestPrompt[] = [];
   
   // Conglomerate-specific prompts with multi-industry focus
@@ -51,6 +51,14 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
       {
         type: "Industry Diversification",
         prompt: `What companies successfully diversified across multiple industries ${geographyText}?`
+      },
+      {
+        type: "Market Expansion",
+        prompt: `Which business groups expanded from one industry to dominate multiple sectors ${geographyText}?`
+      },
+      {
+        type: "Investment Strategy",
+        prompt: `What are the most successful investment strategies for ${classification.market.toLowerCase()} expansion ${geographyText}?`
       }
     ];
   } else if (classification.domain === 'Cybersecurity & Performance' || classification.domain === 'Cybersecurity') {
@@ -70,6 +78,18 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
       {
         type: "Web Security",
         prompt: `Which companies provide comprehensive web application security?`
+      },
+      {
+        type: "Performance Solutions",
+        prompt: `What are the best website performance and acceleration services?`
+      },
+      {
+        type: "DDoS Protection",
+        prompt: `Which platforms offer the most reliable DDoS protection and mitigation?`
+      },
+      {
+        type: "WAF Solutions",
+        prompt: `What are the leading web application firewall solutions for enterprise security?`
       }
     ];
   } else if (classification.domain === 'Performance & CDN') {
@@ -85,6 +105,22 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
       {
         type: "Edge Solutions",
         prompt: `What are the top edge computing solutions for businesses?`
+      },
+      {
+        type: "Caching Solutions",
+        prompt: `Which companies provide the most effective web caching services?`
+      },
+      {
+        type: "Load Balancing",
+        prompt: `What are the best load balancing and traffic management solutions?`
+      },
+      {
+        type: "Global Network",
+        prompt: `Which providers have the largest global network infrastructure?`
+      },
+      {
+        type: "Performance Monitoring",
+        prompt: `What are the leading web performance monitoring tools?`
       }
     ];
   } else {
@@ -105,11 +141,23 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
       {
         type: "Recommendations",
         prompt: `Recommend ${classification.domain.toLowerCase()} solutions for businesses.`
+      },
+      {
+        type: "Enterprise Solutions",
+        prompt: `What are the best enterprise-grade ${classification.domain.toLowerCase()} solutions?`
+      },
+      {
+        type: "Integration",
+        prompt: `Which ${classification.domain.toLowerCase()} solutions integrate well with existing systems?`
+      },
+      {
+        type: "Cost Effective",
+        prompt: `What are the most cost-effective ${classification.domain.toLowerCase()} solutions?`
       }
     ];
   }
 
-  // Test all prompts in parallel with aggressive timeout
+  // Test all 7 prompts in parallel with aggressive timeout
   const testPromises = prompts.map(async (prompt) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout per prompt
@@ -164,7 +212,7 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
     }
   });
 
-  // Wait for all prompts to complete in parallel
+  // Wait for all 7 prompts to complete in parallel
   const results = await Promise.allSettled(testPromises);
   
   return results.map(result => 

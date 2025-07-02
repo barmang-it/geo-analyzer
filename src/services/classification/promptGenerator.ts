@@ -66,6 +66,14 @@ export const generateTestPrompts = (
       {
         type: "Performance Solutions",
         prompt: `What are the best website performance and acceleration services available ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      },
+      {
+        type: "DDoS Protection",
+        prompt: `Which platforms offer the most reliable DDoS protection and mitigation ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      },
+      {
+        type: "WAF Solutions",
+        prompt: `What are the leading web application firewall solutions for enterprise security ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
       }
     );
   } else if (domain === 'Performance & CDN') {
@@ -81,6 +89,22 @@ export const generateTestPrompts = (
       {
         type: "Edge Solutions",
         prompt: `What are the top edge computing solutions for businesses ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      },
+      {
+        type: "Caching Solutions",
+        prompt: `Which companies provide the most effective web caching and acceleration services ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      },
+      {
+        type: "Load Balancing",
+        prompt: `What are the best load balancing and traffic management solutions ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      },
+      {
+        type: "Global Network",
+        prompt: `Which providers have the largest global network infrastructure for content delivery ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      },
+      {
+        type: "Performance Monitoring",
+        prompt: `What are the leading web performance monitoring and optimization tools ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
       }
     );
   } else if (industry === 'Technology') {
@@ -104,6 +128,14 @@ export const generateTestPrompts = (
       {
         type: "Use Case Match",
         prompt: `Which platforms help businesses with ${market.toLowerCase()} needs ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+      },
+      {
+        type: "Enterprise Solutions",
+        prompt: `What are the best enterprise-grade ${domain.toLowerCase()} solutions ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      },
+      {
+        type: "Startup Tools",
+        prompt: `Which ${domain.toLowerCase()} tools are most popular among startups ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
       }
     );
   } else if (industry === 'Food & Beverage') {
@@ -127,6 +159,14 @@ export const generateTestPrompts = (
       {
         type: "Comparison",
         prompt: `Compare the leading ${category.toLowerCase()} brands available ${geography === 'Global' ? 'worldwide' : `in ${geography}`}.`
+      },
+      {
+        type: "Health-Conscious",
+        prompt: `What are the most popular health-conscious ${category.toLowerCase()} brands ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      },
+      {
+        type: "Premium Brands",
+        prompt: `Which premium ${category.toLowerCase()} brands are gaining market share ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
       }
     );
   } else {
@@ -151,26 +191,49 @@ export const generateTestPrompts = (
       {
         type: "Feature Targeted",
         prompt: `What tools provide automation features for ${market.toLowerCase()} companies?`
+      },
+      {
+        type: "Best Practices",
+        prompt: `Which ${domain.toLowerCase()} solutions follow industry best practices ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      },
+      {
+        type: "Cost Effective",
+        prompt: `What are the most cost-effective ${domain.toLowerCase()} solutions for small businesses ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
       }
     );
   }
   
-  // Add recommendation and comparison prompts (always include these)
-  prompts.push(
-    {
-      type: "Recommendation",
-      prompt: `Can you recommend ${domain.toLowerCase()} solutions for businesses ${geography === 'Global' ? 'operating globally' : `in ${geography}`}?`
-    },
-    {
-      type: "Comparison",
-      prompt: `Compare the leading ${category.toLowerCase()} solutions available ${geography === 'Global' ? 'worldwide' : `in ${geography}`}.`
+  // Ensure we always have exactly 7 prompts
+  if (prompts.length < 7) {
+    // Add generic prompts to reach 7
+    const additionalPrompts = [
+      {
+        type: "Recommendation",
+        prompt: `Can you recommend ${domain.toLowerCase()} solutions for businesses ${geography === 'Global' ? 'operating globally' : `in ${geography}`}?`
+      },
+      {
+        type: "Comparison",
+        prompt: `Compare the leading ${category.toLowerCase()} solutions available ${geography === 'Global' ? 'worldwide' : `in ${geography}`}.`
+      },
+      {
+        type: "Integration",
+        prompt: `Which ${domain.toLowerCase()} solutions integrate well with existing business systems ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+      }
+    ];
+    
+    // Add additional prompts until we reach 7
+    for (let i = 0; i < additionalPrompts.length && prompts.length < 7; i++) {
+      prompts.push(additionalPrompts[i]);
     }
-  );
+  }
+  
+  // Trim to exactly 7 prompts if we have more
+  const finalPrompts = prompts.slice(0, 7);
   
   // Simulate responses with realistic mention probability
   const mentionProbability = getMentionProbability(businessName, classification);
   
-  return prompts.map(prompt => ({
+  return finalPrompts.map(prompt => ({
     ...prompt,
     response: Math.random() < mentionProbability ? 
       `Analyzed for ${businessName} - Mentioned` : 
