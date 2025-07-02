@@ -74,18 +74,22 @@ serve(async (req) => {
     
     console.log(`Processing analysis for ${businessName} (${websiteUrl}) - Usage: ${todayUsage + 1}/${DAILY_LIMIT}`)
     
-    // Start all operations in parallel for maximum speed
-    const [websiteContent, classificationResult, promptTestResults] = await Promise.allSettled([
-      extractWebsiteContent(websiteUrl),
-      classifyBusinessWithLLM(businessName, websiteUrl),
+    // Extract website content first
+    const websiteContent = await extractWebsiteContent(websiteUrl);
+    console.log('Website content extracted:', { 
+      titleLength: websiteContent.title.length,
+      descriptionLength: websiteContent.description.length,
+      contentLength: websiteContent.content.length,
+      hasStructuredData: websiteContent.hasStructuredData
+    });
+    
+    // Start classification and prompt testing operations in parallel, now with website content
+    const [classificationResult, promptTestResults] = await Promise.allSettled([
+      classifyBusinessWithLLM(businessName, websiteUrl, websiteContent),
       testPromptsInParallel(businessName, websiteUrl)
     ]);
 
     // Handle results with fallbacks
-    const content = websiteContent.status === 'fulfilled' ? websiteContent.value : {
-      title: '', description: '', content: '', hasStructuredData: false
-    };
-
     const classification = classificationResult.status === 'fulfilled' ? classificationResult.value : {
       industry: 'Technology', market: 'B2B SaaS', geography: 'US', domain: 'Software Solutions'
     };
@@ -93,7 +97,7 @@ serve(async (req) => {
     const promptResults = promptTestResults.status === 'fulfilled' ? promptTestResults.value : [];
 
     // Calculate scores
-    const scores = calculateScores(classification, promptResults, content);
+    const scores = calculateScores(classification, promptResults, websiteContent);
     
     // Record successful usage
     dailyUsage.set(today, todayUsage + 1);
@@ -113,7 +117,7 @@ serve(async (req) => {
         testPrompts: promptResults,
         geoScore: scores.geoScore,
         benchmarkScore: scores.benchmarkScore,
-        hasStructuredData: content.hasStructuredData,
+        hasStructuredData: websiteContent.hasStructuredData,
         llmMentions: promptResults.filter(p => p.response?.includes('mentioned')).length,
         processingTime,
         usageInfo: {

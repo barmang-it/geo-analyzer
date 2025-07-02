@@ -8,18 +8,32 @@ import { generateTestPrompts } from './classification/promptGenerator';
 
 export type { BusinessClassification, TestPrompt };
 
+// Mock website content extraction for frontend (in production, this would be done server-side)
+interface WebsiteContent {
+  title: string;
+  description: string;
+  content: string;
+  hasStructuredData: boolean;
+}
+
+const extractBasicWebsiteInfo = async (url: string): Promise<WebsiteContent | null> => {
+  // In a real implementation, this would be handled server-side
+  // For now, return null to maintain existing behavior
+  return null;
+};
+
 export const classifyBusiness = async (businessName: string, websiteUrl: string): Promise<BusinessClassification> => {
-  // In production, this would use actual LLM APIs
-  // For now, we'll simulate more intelligent classification
-  
   // Extract geography hints from URL or business name
   const geoHints = extractGeographyHints(businessName, websiteUrl);
+  
+  // Try to get basic website info (this is limited in browser environment)
+  const websiteContent = await extractBasicWebsiteInfo(websiteUrl);
   
   // Simulate LLM analysis with longer delay for more realistic processing
   await new Promise(resolve => setTimeout(resolve, 2000));
   
-  // Use more sophisticated business classification
-  const classification = performBusinessClassification(businessName, websiteUrl);
+  // Use more sophisticated business classification with website content
+  const classification = performBusinessClassification(businessName, websiteUrl, websiteContent || undefined);
   
   return {
     ...classification,
