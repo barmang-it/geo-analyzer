@@ -15,21 +15,30 @@ export async function classifyBusinessWithLLM(
     throw new Error('OpenAI API key not configured')
   }
   
-  const prompt = `Classify this business with enhanced conglomerate detection:
+  const prompt = `Classify this business with enhanced detection for cloud infrastructure and security companies:
 Business: ${businessName}
 Website: ${websiteUrl}
 
-Identify if this is a conglomerate operating across multiple industries. Look for keywords like "holdings", "group", "industries", "diversified", or major conglomerates like Reliance Industries, Berkshire Hathaway, Samsung Group, Tata Group, Siemens, GE.
+Focus on identifying:
+- CDN (Content Delivery Network) providers like Akamai, CloudFlare
+- Cloud security and performance companies
+- Multi-industry conglomerates
+- Technology companies with specific specializations
 
 Return JSON only:
 {
   "industry": "Conglomerate OR Technology OR Healthcare OR Finance OR Retail OR Energy OR Automotive OR Food & Beverage OR Other",
-  "market": "Multi-Industry OR B2B SaaS OR E-commerce OR Consumer OR Enterprise OR Cybersecurity OR Cloud Infrastructure OR Other", 
+  "market": "Multi-Industry OR Cloud Infrastructure OR B2B SaaS OR E-commerce OR Consumer OR Enterprise OR Cybersecurity OR Other", 
   "geography": "Global OR US OR EU OR Asia OR Other",
   "domain": "Diversified Conglomerate OR Investment Conglomerate OR Industrial Conglomerate OR Technology Conglomerate OR Business Conglomerate OR Cybersecurity & Performance OR Performance & CDN OR Software Solutions OR Consumer Electronics OR Financial Services OR Healthcare OR E-commerce OR Professional Services OR Other"
 }
 
-For conglomerates, use specific category descriptions like "Energy, Petrochemicals, Retail & Telecom" for Reliance or "Electronics, Heavy Industries & Financial Services" for Samsung.`
+For companies like Akamai, use:
+- Industry: "Technology"
+- Market: "Cloud Infrastructure" 
+- Domain: "Cybersecurity & Performance"
+
+For conglomerates, use specific descriptions like "Energy, Petrochemicals, Retail & Telecom" for category.`
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
@@ -46,7 +55,7 @@ For conglomerates, use specific category descriptions like "Energy, Petrochemica
         messages: [
           {
             role: 'system',
-            content: 'You are a business classifier specializing in identifying conglomerates and diversified business groups. Focus on detecting multi-industry operations and cross-sector presence. Respond only with valid JSON. Be fast and decisive about conglomerate classification.'
+            content: 'You are a business classifier specializing in technology companies, cloud infrastructure, CDN providers, and conglomerates. Akamai should be classified as Technology industry, Cloud Infrastructure market, and Cybersecurity & Performance domain. Respond only with valid JSON.'
           },
           {
             role: 'user',
@@ -75,13 +84,26 @@ For conglomerates, use specific category descriptions like "Energy, Petrochemica
     
     return {
       industry: result.industry || 'Technology',
-      market: result.market || 'B2B SaaS',
-      geography: result.geography || 'US',
-      domain: result.domain || 'Software Solutions'
+      market: result.market || 'Cloud Infrastructure',
+      geography: result.geography || 'Global',
+      domain: result.domain || 'Cybersecurity & Performance'
     }
   } catch (error) {
     clearTimeout(timeoutId);
     console.error('LLM classification error:', error)
+    
+    // Enhanced fallback for known companies
+    const text = `${businessName} ${websiteUrl}`.toLowerCase();
+    
+    if (text.includes('akamai')) {
+      return {
+        industry: 'Technology',
+        market: 'Cloud Infrastructure',
+        geography: 'Global',
+        domain: 'Cybersecurity & Performance'
+      }
+    }
+    
     return {
       industry: 'Technology',
       market: 'B2B SaaS',

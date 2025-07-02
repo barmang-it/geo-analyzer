@@ -1,5 +1,11 @@
 
-import { BusinessClassification } from './types';
+interface BusinessClassification {
+  industry: string;
+  market: string;
+  geography: string;
+  category: string;
+  domain: string;
+}
 
 export const performBusinessClassification = (businessName: string, websiteUrl: string): BusinessClassification => {
   const text = `${businessName} ${websiteUrl}`.toLowerCase();
@@ -80,13 +86,24 @@ export const performBusinessClassification = (businessName: string, websiteUrl: 
     };
   }
   
-  // Enhanced Akamai classification
+  // Enhanced Akamai classification - check first before generic tech classification
   if (text.includes('akamai')) {
     return {
       industry: 'Technology',
       market: 'Cloud Infrastructure',
       geography: 'Global',
-      category: 'CDN & Edge Computing',
+      category: 'CDN, Security & Edge Computing',
+      domain: 'Cybersecurity & Performance'
+    };
+  }
+  
+  // CloudFlare classification
+  if (text.includes('cloudflare') || text.includes('cloud flare')) {
+    return {
+      industry: 'Technology',
+      market: 'Cloud Infrastructure',
+      geography: 'Global',
+      category: 'CDN, Security & Edge Computing',
       domain: 'Cybersecurity & Performance'
     };
   }
@@ -142,21 +159,22 @@ export const performBusinessClassification = (businessName: string, websiteUrl: 
     };
   }
   
-  // Enhanced domain detection for cybersecurity
+  // Enhanced domain detection for cybersecurity and CDN companies
   if (text.includes('security') || text.includes('cyber') || text.includes('firewall') || 
       text.includes('threat') || text.includes('malware') || text.includes('encryption') ||
-      text.includes('ddos') || text.includes('vulnerability') || text.includes('compliance')) {
+      text.includes('ddos') || text.includes('vulnerability') || text.includes('compliance') ||
+      text.includes('cdn') || text.includes('edge') || text.includes('content delivery')) {
     return {
       industry: 'Technology',
-      market: 'Cybersecurity',
+      market: 'Cloud Infrastructure',
       geography: 'US',
-      category: 'Security Solutions',
-      domain: 'Cybersecurity'
+      category: 'Security & Performance Solutions',
+      domain: 'Cybersecurity & Performance'
     };
   }
   
   // Enhanced domain detection for specific technology areas
-  if (text.includes('cdn') || text.includes('edge') || text.includes('performance') || text.includes('optimization')) {
+  if (text.includes('performance') || text.includes('optimization') || text.includes('acceleration')) {
     return {
       industry: 'Technology',
       market: 'Cloud Infrastructure',
