@@ -9,52 +9,66 @@ import { generateGenericPrompts } from './domainPrompts/genericPrompts.ts';
 import { TestPrompt, BusinessClassification } from './types.ts';
 
 export async function testPromptsInParallel(businessName: string, websiteUrl: string): Promise<TestPrompt[]> {
-  const openaiKey = Deno.env.get('OPENAI_API_KEY')
+  const openaiKey = Deno.env.get('OPENAI_API_KEY');
   if (!openaiKey) {
-    console.error('OpenAI API key not configured')
-    return []
+    console.error('OpenAI API key not configured');
+    return [];
   }
+
+  console.log(`Testing prompts for business: ${businessName}, website: ${websiteUrl}`);
 
   // Get classification to generate domain-specific prompts
   const classification = await classifyBusinessWithLLM(businessName, websiteUrl);
+  console.log(`Classification result:`, classification);
   
   // Generate comprehensive prompts based on all classification dimensions
   const prompts = generateDomainSpecificPrompts(classification, businessName);
+  console.log(`Generated ${prompts.length} prompts for testing`);
 
-  // Test all 7 prompts in parallel with aggressive optimization
-  const testPromises = prompts.map(async (prompt) => {
+  // Test all prompts with proper error handling and longer timeout
+  const testPromises = prompts.map(async (prompt, index) => {
     try {
-      const responseContent = await callOpenAI(prompt.prompt, openaiKey, 2000);
+      console.log(`Testing prompt ${index + 1}/${prompts.length}: ${prompt.type}`);
+      
+      const responseContent = await callOpenAI(prompt.prompt, openaiKey, 10000); // 10 second timeout
       
       if (!responseContent) {
+        console.error(`No response received for prompt: ${prompt.type}`);
         return { ...prompt, response: 'error' };
       }
 
-      console.log(`Prompt: ${prompt.type}`);
-      console.log(`Response content: ${responseContent.substring(0, 200)}...`);
+      console.log(`Response for "${prompt.type}": ${responseContent.substring(0, 150)}...`);
       
       const detectionResult = detectBusinessMention(businessName, responseContent);
       
-      console.log(`Business: ${businessName}, Variations checked: ${detectionResult.variations.join(', ')}, Mentioned: ${detectionResult.mentioned}`);
+      const finalResponse = detectionResult.mentioned ? 'mentioned' : 'not mentioned';
+      console.log(`Final result for "${prompt.type}": ${finalResponse}`);
 
       return {
         ...prompt,
-        response: detectionResult.mentioned ? 'mentioned' : 'not mentioned'
+        response: finalResponse
       };
 
     } catch (error) {
-      console.error(`Error testing prompt: ${prompt.type}`, error.message);
+      console.error(`Error testing prompt "${prompt.type}":`, error.message);
       return { ...prompt, response: 'error' };
     }
   });
 
-  // Wait for all prompts to complete
+  // Wait for all prompts to complete with proper error handling
   const results = await Promise.allSettled(testPromises);
   
-  return results.map((result, index) => 
+  const finalResults = results.map((result, index) => 
     result.status === 'fulfilled' ? result.value : 
     { type: prompts[index].type, prompt: prompts[index].prompt, response: 'error' }
   );
+
+  console.log(`Prompt testing complete. Results summary:`);
+  finalResults.forEach(result => {
+    console.log(`  ${result.type}: ${result.response}`);
+  });
+
+  return finalResults;
 }
 
 function generateDomainSpecificPrompts(classification: BusinessClassification, businessName: string): TestPrompt[] {

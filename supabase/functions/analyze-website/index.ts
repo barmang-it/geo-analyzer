@@ -29,6 +29,21 @@ serve(async (req) => {
   const startTime = Date.now();
 
   try {
+    console.log('=== Starting analysis request ===');
+    
+    // Check OpenAI API key
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiKey) {
+      console.error('OpenAI API key not configured');
+      return new Response(
+        JSON.stringify({ error: 'OpenAI API key not configured' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        },
+      );
+    }
+
     // Check circuit breaker
     if (circuitBreakerOpen) {
       const timeSinceLastFailure = Date.now() - lastFailureTime;
@@ -48,6 +63,7 @@ serve(async (req) => {
         // Reset circuit breaker
         circuitBreakerOpen = false;
         failureCount = 0;
+        console.log('Circuit breaker reset');
       }
     }
 
@@ -72,14 +88,17 @@ serve(async (req) => {
 
     const { businessName, websiteUrl }: AnalyzeRequest = await req.json()
     
-    console.log(`Processing analysis for ${businessName} (${websiteUrl}) - Usage: ${todayUsage + 1}/${DAILY_LIMIT}`)
+    console.log(`Processing analysis for "${businessName}" (${websiteUrl}) - Usage: ${todayUsage + 1}/${DAILY_LIMIT}`);
     
     // Start all operations in parallel for maximum speed
+    console.log('Starting parallel operations...');
     const [websiteContentResult, classificationResult, promptTestResults] = await Promise.allSettled([
       extractWebsiteContent(websiteUrl),
       classifyBusinessWithLLM(businessName, websiteUrl),
       testPromptsInParallel(businessName, websiteUrl)
     ]);
+    
+    console.log('All parallel operations completed');
     
     // Handle results with fallbacks
     const websiteContent = websiteContentResult.status === 'fulfilled' ? websiteContentResult.value : {
@@ -92,8 +111,17 @@ serve(async (req) => {
 
     const promptResults = promptTestResults.status === 'fulfilled' ? promptTestResults.value : [];
 
+    console.log(`Prompt test results: ${promptResults.length} prompts tested`);
+    promptResults.forEach((result, index) => {
+      console.log(`  ${index + 1}. ${result.type}: ${result.response}`);
+    });
+
     // Calculate scores
     const scores = calculateScores(classification, promptResults, websiteContent);
+    
+    // Count mentions
+    const llmMentions = promptResults.filter(p => p.response === 'mentioned').length;
+    console.log(`Total LLM mentions found: ${llmMentions}/${promptResults.length}`);
     
     // Record successful usage
     dailyUsage.set(today, todayUsage + 1);
@@ -105,23 +133,27 @@ serve(async (req) => {
     }
 
     const processingTime = Date.now() - startTime;
-    console.log(`Analysis completed in ${processingTime}ms`);
+    console.log(`Analysis completed successfully in ${processingTime}ms`);
+    
+    const result = {
+      classification,
+      testPrompts: promptResults,
+      geoScore: scores.geoScore,
+      benchmarkScore: scores.benchmarkScore,
+      hasStructuredData: websiteContent.hasStructuredData,
+      llmMentions,
+      processingTime,
+      usageInfo: {
+        dailyUsage: todayUsage + 1,
+        dailyLimit: DAILY_LIMIT,
+        costEstimate: (todayUsage + 1) * 0.0006
+      }
+    };
+    
+    console.log('=== Analysis complete ===');
     
     return new Response(
-      JSON.stringify({
-        classification,
-        testPrompts: promptResults,
-        geoScore: scores.geoScore,
-        benchmarkScore: scores.benchmarkScore,
-        hasStructuredData: websiteContent.hasStructuredData,
-        llmMentions: promptResults.filter(p => p.response?.includes('mentioned')).length,
-        processingTime,
-        usageInfo: {
-          dailyUsage: todayUsage + 1,
-          dailyLimit: DAILY_LIMIT,
-          costEstimate: (todayUsage + 1) * 0.0006
-        }
-      }),
+      JSON.stringify(result),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

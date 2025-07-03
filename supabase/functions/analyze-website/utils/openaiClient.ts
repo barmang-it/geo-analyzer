@@ -10,12 +10,14 @@ interface OpenAIResponse {
 export async function callOpenAI(
   prompt: string,
   openaiKey: string,
-  timeoutMs: number = 2000
+  timeoutMs: number = 8000
 ): Promise<string | null> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    console.log(`Making OpenAI request with prompt: ${prompt.substring(0, 100)}...`);
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -30,8 +32,8 @@ export async function callOpenAI(
             content: prompt
           }
         ],
-        temperature: 0,
-        max_tokens: 150,
+        temperature: 0.1,
+        max_tokens: 200,
         top_p: 0.1
       }),
       signal: controller.signal
@@ -40,23 +42,26 @@ export async function callOpenAI(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorText}`);
       return null;
     }
 
     const data: OpenAIResponse = await response.json();
 
     if (!data.choices?.[0]?.message?.content) {
-      console.error('Invalid OpenAI response');
+      console.error('Invalid OpenAI response structure:', JSON.stringify(data, null, 2));
       return null;
     }
 
-    return data.choices[0].message.content;
+    const content = data.choices[0].message.content;
+    console.log(`OpenAI response received: ${content.substring(0, 200)}...`);
+    return content;
 
   } catch (error) {
     clearTimeout(timeoutId);
     if (error.name === 'AbortError') {
-      console.error('OpenAI request timeout');
+      console.error('OpenAI request timeout after', timeoutMs, 'ms');
     } else {
       console.error('OpenAI request error:', error.message);
     }
