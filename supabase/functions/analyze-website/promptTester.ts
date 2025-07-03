@@ -1,18 +1,12 @@
 
 import { classifyBusinessWithLLM } from './businessClassifier.ts';
-
-interface TestPrompt {
-  type: string;
-  prompt: string;
-  response?: string;
-}
-
-interface BusinessClassification {
-  industry: string;
-  market: string;
-  geography: string;
-  domain: string;
-}
+import { callOpenAI } from './utils/openaiClient.ts';
+import { detectBusinessMention } from './utils/mentionDetector.ts';
+import { generateBeveragePrompts } from './domainPrompts/beveragePrompts.ts';
+import { generateConglomeratePrompts } from './domainPrompts/conglomeratePrompts.ts';
+import { generateCybersecurityPrompts, generateCDNPrompts } from './domainPrompts/technologyPrompts.ts';
+import { generateGenericPrompts } from './domainPrompts/genericPrompts.ts';
+import { TestPrompt, BusinessClassification } from './types.ts';
 
 export async function testPromptsInParallel(businessName: string, websiteUrl: string): Promise<TestPrompt[]> {
   const openaiKey = Deno.env.get('OPENAI_API_KEY')
@@ -29,94 +23,27 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
 
   // Test all 7 prompts in parallel with aggressive optimization
   const testPromises = prompts.map(async (prompt) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
-
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'user',
-              content: prompt.prompt
-            }
-          ],
-          temperature: 0,
-          max_tokens: 150,
-          top_p: 0.1
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        console.error(`OpenAI API error for prompt ${prompt.type}: ${response.status} ${response.statusText}`);
+      const responseContent = await callOpenAI(prompt.prompt, openaiKey, 2000);
+      
+      if (!responseContent) {
         return { ...prompt, response: 'error' };
       }
 
-      const data = await response.json();
-
-      if (!data.choices?.[0]?.message?.content) {
-        console.error(`Invalid OpenAI response for prompt ${prompt.type}`);
-        return { ...prompt, response: 'error' };
-      }
-
-      const content = data.choices[0].message.content.toLowerCase();
       console.log(`Prompt: ${prompt.type}`);
-      console.log(`Response content: ${content.substring(0, 200)}...`);
+      console.log(`Response content: ${responseContent.substring(0, 200)}...`);
       
-      // Enhanced mention detection with more comprehensive patterns
-      const businessNameLower = businessName.toLowerCase();
+      const detectionResult = detectBusinessMention(businessName, responseContent);
       
-      // Create variations of the business name to check
-      const nameVariations = [
-        businessNameLower,
-        businessNameLower.replace('-', ' '),
-        businessNameLower.replace(' ', '-'),
-        businessNameLower.replace(/[^a-z0-9]/g, ''), // Remove all special characters
-      ];
-      
-      // Special brand variations for major companies
-      const brandVariations = [];
-      if (businessNameLower.includes('coca-cola') || businessNameLower.includes('coca cola')) {
-        brandVariations.push('coke', 'coca-cola', 'coca cola', 'cocacola');
-      }
-      if (businessNameLower.includes('pepsi')) {
-        brandVariations.push('pepsi', 'pepsico', 'pepsi-cola');
-      }
-      if (businessNameLower.includes('akamai')) {
-        brandVariations.push('akamai', 'akamai technologies');
-      }
-      
-      const allVariations = [...nameVariations, ...brandVariations];
-      
-      // Check if any variation is mentioned in the response
-      const mentioned = allVariations.some(variation => {
-        if (variation.length < 3) return false; // Skip very short variations
-        return content.includes(variation);
-      });
-      
-      console.log(`Business: ${businessName}, Variations checked: ${allVariations.join(', ')}, Mentioned: ${mentioned}`);
+      console.log(`Business: ${businessName}, Variations checked: ${detectionResult.variations.join(', ')}, Mentioned: ${detectionResult.mentioned}`);
 
       return {
         ...prompt,
-        response: mentioned ? 'mentioned' : 'not mentioned'
+        response: detectionResult.mentioned ? 'mentioned' : 'not mentioned'
       };
 
     } catch (error) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        console.error(`Timeout for prompt: ${prompt.type}`);
-      } else {
-        console.error(`Error testing prompt: ${prompt.type}`, error.message);
-      }
+      console.error(`Error testing prompt: ${prompt.type}`, error.message);
       return { ...prompt, response: 'error' };
     }
   });
@@ -133,202 +60,20 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
 function generateDomainSpecificPrompts(classification: BusinessClassification, businessName: string): TestPrompt[] {
   const { industry, market, geography, domain } = classification;
   
-  // Create geography text for consistent use
-  const geoText = geography === 'Global' ? 'worldwide' : `in ${geography}`;
-  const geoTextAlt = geography === 'Global' ? 'globally' : `in ${geography}`;
-  
   let prompts: TestPrompt[] = [];
   
   // Special handling for major global beverage brands
   if (industry === 'Food & Beverage' && domain === 'Global Beverage Brand') {
-    prompts = [
-      {
-        type: "Global Beverage Leaders",
-        prompt: `What are the top 5 global soft drink and beverage companies ${geoText}?`
-      },
-      {
-        type: "Market Share Leaders",
-        prompt: `Which soft drink and beverage brands have the largest market share ${geoTextAlt}?`
-      },
-      {
-        type: "Brand Recognition",
-        prompt: `List the most recognizable soft drink and beverage brands in the world.`
-      },
-      {
-        type: "Competition Analysis",
-        prompt: `Who are the main competitors in the global soft drink and beverage industry?`
-      },
-      {
-        type: "Consumer Preferences",
-        prompt: `What are the most popular soft drink and beverage brands among consumers ${geoText}?`
-      },
-      {
-        type: "Industry Giants",
-        prompt: `Which companies dominate the ${market.toLowerCase()} sector for soft drinks and beverages ${geoTextAlt}?`
-      },
-      {
-        type: "Brand Portfolio",
-        prompt: `What are the leading global beverage companies and their flagship products?`
-      }
-    ];
+    prompts = generateBeveragePrompts(geography, market);
   } else if (industry === 'Conglomerate') {
-    prompts = [
-      {
-        type: "Multi-Industry Leaders",
-        prompt: `Which ${market.toLowerCase()} conglomerates operate across multiple business sectors ${geoText}?`
-      },
-      {
-        type: "Diversified Holdings",
-        prompt: `What are the leading ${industry.toLowerCase()} companies with ${market.toLowerCase()} interests ${geoText}?`
-      },
-      {
-        type: "Market Expansion",
-        prompt: `Which ${domain.toLowerCase()} companies successfully expanded their ${market.toLowerCase()} operations ${geoTextAlt}?`
-      },
-      {
-        type: "Geographic Presence",
-        prompt: `What ${industry.toLowerCase()} groups have the strongest ${market.toLowerCase()} presence ${geoText}?`
-      },
-      {
-        type: "Industry Leadership",
-        prompt: `Which companies dominate multiple industries within ${market.toLowerCase()} markets ${geoText}?`
-      },
-      {
-        type: "Strategic Diversification",
-        prompt: `What are the most successful ${domain.toLowerCase()} strategies for ${market.toLowerCase()} expansion ${geoText}?`
-      },
-      {
-        type: "Market Comparison",
-        prompt: `Compare leading ${industry.toLowerCase()} companies operating in ${market.toLowerCase()} sectors ${geoTextAlt}.`
-      }
-    ];
+    prompts = generateConglomeratePrompts(geography, market, domain, industry);
   } else if (domain === 'Cybersecurity & Performance' || domain === 'Cybersecurity') {
-    prompts = [
-      {
-        type: "Security Solutions",
-        prompt: `What are the top ${domain.toLowerCase()} platforms serving ${market.toLowerCase()} companies ${geoText}?`
-      },
-      {
-        type: "Performance Tools",
-        prompt: `Which ${industry.toLowerCase()} companies provide the best security and performance solutions ${geoText}?`
-      },
-      {
-        type: "Market Leaders",
-        prompt: `What are the leading ${market.toLowerCase()} focused ${domain.toLowerCase()} providers ${geoTextAlt}?`
-      },
-      {
-        type: "Industry Solutions",
-        prompt: `Which platforms offer comprehensive cybersecurity for ${market.toLowerCase()} businesses ${geoText}?`
-      },
-      {
-        type: "Geographic Coverage",
-        prompt: `What ${domain.toLowerCase()} companies have the strongest ${market.toLowerCase()} presence ${geoText}?`
-      },
-      {
-        type: "Technology Integration",
-        prompt: `Which ${industry.toLowerCase()} solutions integrate best with ${market.toLowerCase()} infrastructure ${geoTextAlt}?`
-      },
-      {
-        type: "Enterprise Focus",
-        prompt: `What are the most reliable security and performance solutions for ${market.toLowerCase()} enterprises ${geoText}?`
-      }
-    ];
+    prompts = generateCybersecurityPrompts(geography, market, domain, industry);
   } else if (domain === 'Performance & CDN') {
-    prompts = [
-      {
-        type: "CDN Providers",
-        prompt: `What are the leading ${domain.toLowerCase()} providers serving ${market.toLowerCase()} companies ${geoText}?`
-      },
-      {
-        type: "Performance Solutions",
-        prompt: `Which ${industry.toLowerCase()} platforms offer the best web performance optimization ${geoTextAlt}?`
-      },
-      {
-        type: "Market Focus",
-        prompt: `What are the top ${market.toLowerCase()} focused ${domain.toLowerCase()} solutions ${geoText}?`
-      },
-      {
-        type: "Technology Stack",
-        prompt: `Which companies provide comprehensive content delivery for ${market.toLowerCase()} businesses ${geoText}?`
-      },
-      {
-        type: "Global Infrastructure",
-        prompt: `What ${domain.toLowerCase()} providers have the largest network infrastructure ${geoText}?`
-      },
-      {
-        type: "Industry Specialization",
-        prompt: `Which ${industry.toLowerCase()} solutions are optimized for ${market.toLowerCase()} use cases ${geoTextAlt}?`
-      },
-      {
-        type: "Performance Monitoring",
-        prompt: `What are the leading web performance monitoring tools for ${market.toLowerCase()} companies ${geoText}?`
-      }
-    ];
-  } else if (industry === 'Food & Beverage') {
-    prompts = [
-      {
-        type: "Brand Leaders",
-        prompt: `What are the most popular beverage brands in ${market.toLowerCase()} ${geoText}?`
-      },
-      {
-        type: "Market Alternatives",
-        prompt: `What are some alternatives to leading beverage brands for ${market.toLowerCase()} companies ${geoText}?`
-      },
-      {
-        type: "Industry Trends",
-        prompt: `Which ${industry.toLowerCase()} brands are trending in ${market.toLowerCase()} ${geoTextAlt}?`
-      },
-      {
-        type: "Geographic Presence",
-        prompt: `What beverage companies have the strongest presence in ${market.toLowerCase()} ${geoText}?`
-      },
-      {
-        type: "Premium Segment",
-        prompt: `Which premium beverage brands are gaining market share in ${market.toLowerCase()} ${geoText}?`
-      },
-      {
-        type: "Health-Conscious",
-        prompt: `What are the most popular health-conscious beverage brands in ${market.toLowerCase()} ${geoTextAlt}?`
-      },
-      {
-        type: "Market Comparison",
-        prompt: `Compare the leading beverage brands available in ${market.toLowerCase()} ${geoText}.`
-      }
-    ];
+    prompts = generateCDNPrompts(geography, market, domain, industry);
   } else {
-    // Generic prompts using all classification dimensions
-    prompts = [
-      {
-        type: "Industry Leaders",
-        prompt: `What are the best ${domain.toLowerCase()} tools for ${industry.toLowerCase()} companies in ${market.toLowerCase()} ${geoText}?`
-      },
-      {
-        type: "Market Solutions",
-        prompt: `Which platforms help ${industry.toLowerCase()} companies with ${market.toLowerCase()} operations ${geoText}?`
-      },
-      {
-        type: "Technology Tools",
-        prompt: `What ${domain.toLowerCase()} solutions are gaining traction in ${market.toLowerCase()} ${geoTextAlt}?`
-      },
-      {
-        type: "Domain Expertise",
-        prompt: `Which ${domain.toLowerCase()} providers specialize in ${industry.toLowerCase()} and ${market.toLowerCase()} ${geoText}?`
-      },
-      {
-        type: "Geographic Focus",
-        prompt: `What are the leading ${domain.toLowerCase()} solutions for ${industry.toLowerCase()} businesses ${geoText}?`
-      },
-      {
-        type: "Best Practices",
-        prompt: `Which ${domain.toLowerCase()} solutions follow ${industry.toLowerCase()} best practices for ${market.toLowerCase()} ${geoTextAlt}?`
-      },
-      {
-        type: "Cost Effectiveness",
-        prompt: `What are the most cost-effective ${domain.toLowerCase()} solutions for ${industry.toLowerCase()} companies in ${market.toLowerCase()} ${geoText}?`
-      }
-    ];
+    prompts = generateGenericPrompts(geography, market, domain, industry);
   }
   
   return prompts.slice(0, 7); // Ensure exactly 7 prompts
 }
-
