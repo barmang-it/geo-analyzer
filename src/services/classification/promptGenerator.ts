@@ -8,226 +8,207 @@ export const generateTestPrompts = (
 ): TestPrompt[] => {
   const { industry, market, geography, category, domain } = classification;
   
-  // Generate domain-specific prompts based on the business domain
+  // Create geography text for consistent use
+  const geoText = geography === 'Global' ? 'worldwide' : `in ${geography}`;
+  const geoTextAlt = geography === 'Global' ? 'globally' : `in ${geography}`;
+  
+  // Generate comprehensive prompts based on all classification dimensions
   const prompts: TestPrompt[] = [];
   
-  // Conglomerate-specific prompts with multi-industry focus
+  // Industry + Market + Geography specific prompts
   if (industry === 'Conglomerate') {
-    const geographyText = geography === 'Global' ? 'worldwide' : `in ${geography}`;
-    
     prompts.push(
       {
         type: "Multi-Industry Leaders",
-        prompt: `Which companies operate across ${category.toLowerCase()} sectors ${geographyText}?`
+        prompt: `Which ${market.toLowerCase()} conglomerates operate across ${category.toLowerCase()} sectors ${geoText}?`
       },
       {
         type: "Diversified Holdings",
-        prompt: `What are the leading diversified business groups with interests in ${category.toLowerCase()} ${geographyText}?`
-      },
-      {
-        type: "Conglomerate Comparison",
-        prompt: `Compare major conglomerates operating in ${market.toLowerCase()} markets ${geographyText}.`
-      },
-      {
-        type: "Cross-Sector Operations",
-        prompt: `Which ${domain.toLowerCase()} companies have the broadest business portfolio ${geographyText}?`
-      },
-      {
-        type: "Industry Diversification",
-        prompt: `What companies successfully diversified across ${category.toLowerCase()} industries ${geographyText}?`
+        prompt: `What are the leading ${industry.toLowerCase()} companies with ${market.toLowerCase()} interests in ${category.toLowerCase()} ${geoText}?`
       },
       {
         type: "Market Expansion",
-        prompt: `Which business groups expanded from one industry to dominate ${category.toLowerCase()} ${geographyText}?`
+        prompt: `Which ${domain.toLowerCase()} companies successfully expanded their ${market.toLowerCase()} operations ${geoTextAlt}?`
       },
       {
-        type: "Investment Strategy",
-        prompt: `What are the most successful ${domain.toLowerCase()} strategies for ${market.toLowerCase()} expansion ${geographyText}?`
-      }
-    );
-  } else if (domain === 'Cybersecurity & Performance' || domain === 'Cybersecurity') {
-    prompts.push(
-      {
-        type: "Security Tools",
-        prompt: `What are the top cybersecurity platforms for protecting against DDoS attacks ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+        type: "Geographic Presence",
+        prompt: `What ${industry.toLowerCase()} groups have the strongest ${market.toLowerCase()} presence ${geoText}?`
       },
       {
-        type: "CDN Solutions",
-        prompt: `Which content delivery networks provide the best performance optimization ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+        type: "Industry Leadership",
+        prompt: `Which companies dominate the ${category.toLowerCase()} space within ${market.toLowerCase()} markets ${geoText}?`
       },
       {
-        type: "Edge Computing",
-        prompt: `What are the leading edge computing platforms for web performance ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+        type: "Strategic Diversification",
+        prompt: `What are the most successful ${domain.toLowerCase()} strategies for ${market.toLowerCase()} expansion ${geoText}?`
       },
       {
-        type: "Web Security",
-        prompt: `Which companies provide comprehensive web application security solutions ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
-      },
-      {
-        type: "Performance Solutions",
-        prompt: `What are the best website performance and acceleration services available ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
-      },
-      {
-        type: "DDoS Protection",
-        prompt: `Which platforms offer the most reliable DDoS protection and mitigation ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
-      },
-      {
-        type: "WAF Solutions",
-        prompt: `What are the leading web application firewall solutions for enterprise security ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
-      }
-    );
-  } else if (domain === 'Performance & CDN') {
-    prompts.push(
-      {
-        type: "CDN Providers",
-        prompt: `What are the leading content delivery network providers ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
-      },
-      {
-        type: "Performance Tools",
-        prompt: `Which platforms offer the best website performance optimization ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
-      },
-      {
-        type: "Edge Solutions",
-        prompt: `What are the top edge computing solutions for businesses ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
-      },
-      {
-        type: "Caching Solutions",
-        prompt: `Which companies provide the most effective web caching and acceleration services ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
-      },
-      {
-        type: "Load Balancing",
-        prompt: `What are the best load balancing and traffic management solutions ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
-      },
-      {
-        type: "Global Network",
-        prompt: `Which providers have the largest global network infrastructure for content delivery ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
-      },
-      {
-        type: "Performance Monitoring",
-        prompt: `What are the leading web performance monitoring and optimization tools ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+        type: "Market Comparison",
+        prompt: `Compare leading ${industry.toLowerCase()} companies operating in ${market.toLowerCase()} sectors ${geoTextAlt}.`
       }
     );
   } else if (industry === 'Technology') {
-    prompts.push(
-      {
-        type: "Top Tools",
-        prompt: `What are the leading ${domain.toLowerCase()} solutions ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
-      },
-      {
-        type: "Alternatives",
-        prompt: `What are some alternatives to popular ${market.toLowerCase()} platforms?`
-      },
-      {
-        type: "Market Leaders",
-        prompt: `Which companies dominate the ${category.toLowerCase()} space ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
-      },
-      {
-        type: "Industry Trends",
-        prompt: `What ${domain.toLowerCase()} companies are leading innovation ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
-      },
-      {
-        type: "Use Case Match",
-        prompt: `Which platforms help businesses with ${market.toLowerCase()} needs ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
-      },
-      {
-        type: "Enterprise Solutions",
-        prompt: `What are the best enterprise-grade ${domain.toLowerCase()} solutions ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
-      },
-      {
-        type: "Startup Tools",
-        prompt: `Which ${domain.toLowerCase()} tools are most popular among startups ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
-      }
-    );
+    if (domain === 'Cybersecurity & Performance' || domain === 'Cybersecurity') {
+      prompts.push(
+        {
+          type: "Security Solutions",
+          prompt: `What are the top ${domain.toLowerCase()} platforms serving ${market.toLowerCase()} companies ${geoText}?`
+        },
+        {
+          type: "Performance Tools",
+          prompt: `Which ${industry.toLowerCase()} companies provide the best ${category.toLowerCase()} solutions ${geoText}?`
+        },
+        {
+          type: "Market Leaders",
+          prompt: `What are the leading ${market.toLowerCase()} focused ${domain.toLowerCase()} providers ${geoTextAlt}?`
+        },
+        {
+          type: "Industry Solutions",
+          prompt: `Which platforms offer comprehensive ${category.toLowerCase()} for ${market.toLowerCase()} businesses ${geoText}?`
+        },
+        {
+          type: "Geographic Coverage",
+          prompt: `What ${domain.toLowerCase()} companies have the strongest ${market.toLowerCase()} presence ${geoText}?`
+        },
+        {
+          type: "Technology Integration",
+          prompt: `Which ${industry.toLowerCase()} solutions integrate best with ${market.toLowerCase()} infrastructure ${geoTextAlt}?`
+        },
+        {
+          type: "Enterprise Focus",
+          prompt: `What are the most reliable ${category.toLowerCase()} solutions for ${market.toLowerCase()} enterprises ${geoText}?`
+        }
+      );
+    } else if (domain === 'Performance & CDN') {
+      prompts.push(
+        {
+          type: "CDN Providers",
+          prompt: `What are the leading ${domain.toLowerCase()} providers serving ${market.toLowerCase()} companies ${geoText}?`
+        },
+        {
+          type: "Performance Solutions",
+          prompt: `Which ${industry.toLowerCase()} platforms offer the best ${category.toLowerCase()} ${geoTextAlt}?`
+        },
+        {
+          type: "Market Focus",
+          prompt: `What are the top ${market.toLowerCase()} focused ${domain.toLowerCase()} solutions ${geoText}?`
+        },
+        {
+          type: "Technology Stack",
+          prompt: `Which companies provide comprehensive ${category.toLowerCase()} for ${market.toLowerCase()} businesses ${geoText}?`
+        },
+        {
+          type: "Global Infrastructure",
+          prompt: `What ${domain.toLowerCase()} providers have the largest network infrastructure ${geoText}?`
+        },
+        {
+          type: "Industry Specialization",
+          prompt: `Which ${industry.toLowerCase()} solutions are optimized for ${market.toLowerCase()} use cases ${geoTextAlt}?`
+        },
+        {
+          type: "Performance Monitoring",
+          prompt: `What are the leading ${category.toLowerCase()} monitoring tools for ${market.toLowerCase()} companies ${geoText}?`
+        }
+      );
+    } else {
+      // Generic technology prompts
+      prompts.push(
+        {
+          type: "Technology Leaders",
+          prompt: `What are the leading ${domain.toLowerCase()} solutions for ${market.toLowerCase()} companies ${geoText}?`
+        },
+        {
+          type: "Market Solutions",
+          prompt: `Which ${industry.toLowerCase()} platforms dominate the ${market.toLowerCase()} space ${geoTextAlt}?`
+        },
+        {
+          type: "Industry Tools",
+          prompt: `What ${category.toLowerCase()} tools are most popular among ${market.toLowerCase()} businesses ${geoText}?`
+        },
+        {
+          type: "Innovation Leaders",
+          prompt: `Which ${domain.toLowerCase()} companies are leading innovation in ${market.toLowerCase()} ${geoTextAlt}?`
+        },
+        {
+          type: "Enterprise Solutions",
+          prompt: `What are the best ${category.toLowerCase()} solutions for ${market.toLowerCase()} enterprises ${geoText}?`
+        },
+        {
+          type: "Market Alternatives",
+          prompt: `What are some alternatives to popular ${market.toLowerCase()} platforms in ${domain.toLowerCase()} ${geoText}?`
+        },
+        {
+          type: "Startup Tools",
+          prompt: `Which ${domain.toLowerCase()} tools are most popular among ${market.toLowerCase()} startups ${geoTextAlt}?`
+        }
+      );
+    }
   } else if (industry === 'Food & Beverage') {
     prompts.push(
       {
-        type: "Top Brands",
-        prompt: `What are the most popular beverage brands ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+        type: "Brand Leaders",
+        prompt: `What are the most popular ${category.toLowerCase()} brands in ${market.toLowerCase()} ${geoText}?`
       },
       {
-        type: "Alternatives",
-        prompt: `What are some alternatives to Coca-Cola for ${market.toLowerCase()} companies?`
-      },
-      {
-        type: "Market Leaders",
-        prompt: `Which companies dominate the ${category.toLowerCase()} market ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+        type: "Market Alternatives",
+        prompt: `What are some alternatives to leading ${category.toLowerCase()} brands for ${market.toLowerCase()} companies ${geoText}?`
       },
       {
         type: "Industry Trends",
-        prompt: `What ${industry.toLowerCase()} brands are trending ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+        prompt: `Which ${industry.toLowerCase()} brands are trending in ${market.toLowerCase()} ${geoTextAlt}?`
       },
       {
-        type: "Comparison",
-        prompt: `Compare the leading ${category.toLowerCase()} brands available ${geography === 'Global' ? 'worldwide' : `in ${geography}`}.`
+        type: "Geographic Presence",
+        prompt: `What ${category.toLowerCase()} companies have the strongest presence in ${market.toLowerCase()} ${geoText}?`
+      },
+      {
+        type: "Premium Segment",
+        prompt: `Which premium ${category.toLowerCase()} brands are gaining market share in ${market.toLowerCase()} ${geoText}?`
       },
       {
         type: "Health-Conscious",
-        prompt: `What are the most popular health-conscious ${category.toLowerCase()} brands ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+        prompt: `What are the most popular health-conscious ${category.toLowerCase()} brands in ${market.toLowerCase()} ${geoTextAlt}?`
       },
       {
-        type: "Premium Brands",
-        prompt: `Which premium ${category.toLowerCase()} brands are gaining market share ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+        type: "Market Comparison",
+        prompt: `Compare the leading ${category.toLowerCase()} brands available in ${market.toLowerCase()} ${geoText}.`
       }
     );
   } else {
-    // Generic prompts for other industries, but still domain-specific
+    // Generic industry prompts using all dimensions
     prompts.push(
       {
-        type: "Top Tools",
-        prompt: `What are the best ${domain.toLowerCase()} tools for businesses ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+        type: "Industry Leaders",
+        prompt: `What are the best ${domain.toLowerCase()} tools for ${industry.toLowerCase()} companies in ${market.toLowerCase()} ${geoText}?`
       },
       {
-        type: "Alternatives",
-        prompt: `What are some alternatives to popular ${market.toLowerCase()} solutions?`
+        type: "Market Solutions",
+        prompt: `Which platforms help ${industry.toLowerCase()} companies with ${market.toLowerCase()} operations ${geoText}?`
       },
       {
-        type: "Use Case Match",
-        prompt: `Which platforms help ${industry.toLowerCase()} companies manage their operations ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+        type: "Category Tools",
+        prompt: `What ${category.toLowerCase()} solutions are gaining traction in ${market.toLowerCase()} ${geoTextAlt}?`
       },
       {
-        type: "Trends",
-        prompt: `What ${category.toLowerCase()} tools are gaining traction ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+        type: "Domain Expertise",
+        prompt: `Which ${domain.toLowerCase()} providers specialize in ${industry.toLowerCase()} and ${market.toLowerCase()} ${geoText}?`
       },
       {
-        type: "Feature Targeted",
-        prompt: `What tools provide automation features for ${market.toLowerCase()} companies?`
+        type: "Geographic Focus",
+        prompt: `What are the leading ${category.toLowerCase()} solutions for ${industry.toLowerCase()} businesses ${geoText}?`
       },
       {
         type: "Best Practices",
-        prompt: `Which ${domain.toLowerCase()} solutions follow industry best practices ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
+        prompt: `Which ${domain.toLowerCase()} solutions follow ${industry.toLowerCase()} best practices for ${market.toLowerCase()} ${geoTextAlt}?`
       },
       {
-        type: "Cost Effective",
-        prompt: `What are the most cost-effective ${domain.toLowerCase()} solutions for small businesses ${geography === 'Global' ? 'worldwide' : `in ${geography}`}?`
+        type: "Cost Effectiveness",
+        prompt: `What are the most cost-effective ${category.toLowerCase()} solutions for ${industry.toLowerCase()} companies in ${market.toLowerCase()} ${geoText}?`
       }
     );
   }
   
-  // Ensure we always have exactly 7 prompts
-  if (prompts.length < 7) {
-    // Add generic prompts to reach 7
-    const additionalPrompts = [
-      {
-        type: "Recommendation",
-        prompt: `Can you recommend ${domain.toLowerCase()} solutions for businesses ${geography === 'Global' ? 'operating globally' : `in ${geography}`}?`
-      },
-      {
-        type: "Comparison",
-        prompt: `Compare the leading ${category.toLowerCase()} solutions available ${geography === 'Global' ? 'worldwide' : `in ${geography}`}.`
-      },
-      {
-        type: "Integration",
-        prompt: `Which ${domain.toLowerCase()} solutions integrate well with existing business systems ${geography === 'Global' ? 'globally' : `in ${geography}`}?`
-      }
-    ];
-    
-    // Add additional prompts until we reach 7
-    for (let i = 0; i < additionalPrompts.length && prompts.length < 7; i++) {
-      prompts.push(additionalPrompts[i]);
-    }
-  }
-  
-  // Trim to exactly 7 prompts if we have more
+  // Ensure exactly 7 prompts
   const finalPrompts = prompts.slice(0, 7);
   
   // Simulate responses with realistic mention probability
