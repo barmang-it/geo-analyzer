@@ -69,7 +69,15 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
       }
 
       const content = data.choices[0].message.content.toLowerCase();
-      const mentioned = content.includes(businessName.toLowerCase());
+      
+      // Enhanced mention detection - check for exact name and common variations
+      const businessNameLower = businessName.toLowerCase();
+      const mentioned = content.includes(businessNameLower) || 
+                       content.includes(businessNameLower.replace('-', ' ')) ||
+                       content.includes(businessNameLower.replace(' ', '-')) ||
+                       // Special handling for common brand variations
+                       (businessNameLower.includes('coca-cola') && (content.includes('coke') || content.includes('coca cola'))) ||
+                       (businessNameLower.includes('pepsi') && content.includes('pepsico'));
 
       return {
         ...prompt,
@@ -105,8 +113,39 @@ function generateDomainSpecificPrompts(classification: BusinessClassification, b
   
   let prompts: TestPrompt[] = [];
   
-  // Industry + Market + Geography + Domain specific prompts
-  if (industry === 'Conglomerate') {
+  // Special handling for major global beverage brands
+  if (industry === 'Food & Beverage' && domain === 'Global Beverage Brand') {
+    prompts = [
+      {
+        type: "Global Beverage Leaders",
+        prompt: `What are the top 5 global soft drink and beverage companies ${geoText}?`
+      },
+      {
+        type: "Market Share Leaders",
+        prompt: `Which soft drink and beverage brands have the largest market share ${geoTextAlt}?`
+      },
+      {
+        type: "Brand Recognition",
+        prompt: `List the most recognizable soft drink and beverage brands in the world.`
+      },
+      {
+        type: "Competition Analysis",
+        prompt: `Who are the main competitors in the global soft drink and beverage industry?`
+      },
+      {
+        type: "Consumer Preferences",
+        prompt: `What are the most popular soft drink and beverage brands among consumers ${geoText}?`
+      },
+      {
+        type: "Industry Giants",
+        prompt: `Which companies dominate the ${market.toLowerCase()} sector for soft drinks and beverages ${geoTextAlt}?`
+      },
+      {
+        type: "Brand Portfolio",
+        prompt: `What are the leading global beverage companies and their flagship products?`
+      }
+    ];
+  } else if (industry === 'Conglomerate') {
     prompts = [
       {
         type: "Multi-Industry Leaders",
@@ -266,3 +305,4 @@ function generateDomainSpecificPrompts(classification: BusinessClassification, b
   
   return prompts.slice(0, 7); // Ensure exactly 7 prompts
 }
+

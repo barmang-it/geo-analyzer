@@ -1,3 +1,4 @@
+
 interface BusinessClassification {
   industry: string;
   market: string;
@@ -27,6 +28,37 @@ export const performBusinessClassification = (
   }
   
   const fullText = `${text} ${contentText}`;
+  
+  // Enhanced major beverage brands with more specific classification
+  if (fullText.includes('coca-cola') || fullText.includes('coke') || fullText.includes('coca cola')) {
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'Global',
+      category: 'Soft Drinks & Beverages',
+      domain: 'Global Beverage Brand'
+    };
+  }
+  
+  if (fullText.includes('pepsi') || fullText.includes('pepsico')) {
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'Global',
+      category: 'Soft Drinks & Snacks',
+      domain: 'Global Beverage Brand'
+    };
+  }
+  
+  if (fullText.includes('dr pepper') || fullText.includes('sprite') || fullText.includes('fanta')) {
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'Global',
+      category: 'Soft Drinks & Beverages',
+      domain: 'Global Beverage Brand'
+    };
+  }
   
   // Enhanced Akamai detection with website content
   if (fullText.includes('akamai') || 
@@ -131,26 +163,6 @@ export const performBusinessClassification = (
   }
   
   // Enhanced major brands classification with content analysis
-  if (fullText.includes('pepsi') || fullText.includes('pepsico')) {
-    return {
-      industry: 'Food & Beverage',
-      market: 'Consumer Packaged Goods',
-      geography: 'Global',
-      category: 'Beverages & Snacks',
-      domain: 'Consumer Products'
-    };
-  }
-  
-  if (fullText.includes('coca-cola') || fullText.includes('coke')) {
-    return {
-      industry: 'Food & Beverage',
-      market: 'Consumer Packaged Goods',
-      geography: 'Global',
-      category: 'Beverages',
-      domain: 'Consumer Products'
-    };
-  }
-  
   if (fullText.includes('apple') && !fullText.includes('apple.com/developer')) {
     return {
       industry: 'Technology',
@@ -223,6 +235,20 @@ export const performBusinessClassification = (
     };
   }
   
+  // Enhanced Food & Beverage detection
+  if (fullText.includes('food') || fullText.includes('beverage') || fullText.includes('drink') ||
+      fullText.includes('restaurant') || fullText.includes('snack') || fullText.includes('nutrition') ||
+      fullText.includes('soda') || fullText.includes('juice') || fullText.includes('water') ||
+      fullText.includes('coffee') || fullText.includes('tea') || fullText.includes('dairy')) {
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'US',
+      category: 'Food & Beverages',
+      domain: 'Consumer Products'
+    };
+  }
+  
   if (text.includes('auto') || text.includes('car') || text.includes('vehicle')) {
     return {
       industry: 'Automotive',
@@ -252,3 +278,4 @@ export const performBusinessClassification = (
     domain: 'Professional Services'
   };
 };
+

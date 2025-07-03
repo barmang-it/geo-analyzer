@@ -53,6 +53,11 @@ Based on the actual website content above, classify this business. Pay special a
 - Their target market and geography
 - Technical capabilities mentioned
 
+For major global beverage brands like Coca-Cola, Pepsi, use:
+- Industry: "Food & Beverage"
+- Market: "Consumer Packaged Goods"
+- Domain: "Global Beverage Brand"
+
 For companies like Akamai (CDN/edge computing/security), use:
 - Industry: "Technology"
 - Market: "Cloud Infrastructure"
@@ -63,9 +68,9 @@ For conglomerates with diverse holdings, identify their main business areas.
 Return JSON only:
 {
   "industry": "Technology OR Healthcare OR Finance OR Retail OR Energy OR Automotive OR Food & Beverage OR Conglomerate OR Other",
-  "market": "Cloud Infrastructure OR B2B SaaS OR E-commerce OR Consumer OR Enterprise OR Cybersecurity OR Multi-Industry OR Other", 
+  "market": "Cloud Infrastructure OR B2B SaaS OR E-commerce OR Consumer OR Enterprise OR Cybersecurity OR Multi-Industry OR Consumer Packaged Goods OR Other", 
   "geography": "Global OR US OR EU OR Asia OR Other",
-  "domain": "Cybersecurity & Performance OR Performance & CDN OR Software Solutions OR Consumer Electronics OR Financial Services OR Healthcare OR E-commerce OR Professional Services OR Diversified Conglomerate OR Other"
+  "domain": "Cybersecurity & Performance OR Performance & CDN OR Software Solutions OR Consumer Electronics OR Financial Services OR Healthcare OR E-commerce OR Professional Services OR Diversified Conglomerate OR Global Beverage Brand OR Other"
 }`;
 
   const controller = new AbortController();
@@ -83,7 +88,7 @@ Return JSON only:
         messages: [
           {
             role: 'system',
-            content: 'You are a business classification expert. Analyze the provided website content to accurately classify businesses. Focus on what the company actually does based on their website content, not just their name. For technology companies like Akamai (CDN/security/edge computing), classify as Technology industry with Cloud Infrastructure market and Cybersecurity & Performance domain. Respond only with valid JSON.'
+            content: 'You are a business classification expert. Analyze the provided website content to accurately classify businesses. Focus on what the company actually does based on their website content, not just their name. For major beverage brands like Coca-Cola, Pepsi classify as Food & Beverage industry with Consumer Packaged Goods market and Global Beverage Brand domain. For technology companies like Akamai (CDN/security/edge computing), classify as Technology industry with Cloud Infrastructure market and Cybersecurity & Performance domain. Respond only with valid JSON.'
           },
           {
             role: 'user',
@@ -139,6 +144,34 @@ function performFallbackClassification(
   }
   
   const fullText = `${text} ${contentText}`;
+  
+  // Enhanced major beverage brands detection
+  if (fullText.includes('coca-cola') || fullText.includes('coke') || fullText.includes('coca cola')) {
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'Global',
+      domain: 'Global Beverage Brand'
+    }
+  }
+  
+  if (fullText.includes('pepsi') || fullText.includes('pepsico')) {
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'Global',
+      domain: 'Global Beverage Brand'
+    }
+  }
+  
+  if (fullText.includes('dr pepper') || fullText.includes('sprite') || fullText.includes('fanta')) {
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'Global',
+      domain: 'Global Beverage Brand'
+    }
+  }
   
   // Enhanced Akamai detection
   if (fullText.includes('akamai') || 
@@ -199,9 +232,11 @@ function performFallbackClassification(
     }
   }
   
-  // Food & Beverage
+  // Enhanced Food & Beverage detection
   if (fullText.includes('food') || fullText.includes('beverage') || fullText.includes('restaurant') ||
-      fullText.includes('drink') || fullText.includes('snack') || fullText.includes('nutrition')) {
+      fullText.includes('drink') || fullText.includes('snack') || fullText.includes('nutrition') ||
+      fullText.includes('soda') || fullText.includes('juice') || fullText.includes('water') ||
+      fullText.includes('coffee') || fullText.includes('tea') || fullText.includes('dairy')) {
     return {
       industry: 'Food & Beverage',
       market: 'Consumer Packaged Goods',
@@ -251,3 +286,4 @@ function performFallbackClassification(
     domain: 'Software Solutions'
   }
 }
+
