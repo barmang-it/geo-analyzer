@@ -69,15 +69,41 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
       }
 
       const content = data.choices[0].message.content.toLowerCase();
+      console.log(`Prompt: ${prompt.type}`);
+      console.log(`Response content: ${content.substring(0, 200)}...`);
       
-      // Enhanced mention detection - check for exact name and common variations
+      // Enhanced mention detection with more comprehensive patterns
       const businessNameLower = businessName.toLowerCase();
-      const mentioned = content.includes(businessNameLower) || 
-                       content.includes(businessNameLower.replace('-', ' ')) ||
-                       content.includes(businessNameLower.replace(' ', '-')) ||
-                       // Special handling for common brand variations
-                       (businessNameLower.includes('coca-cola') && (content.includes('coke') || content.includes('coca cola'))) ||
-                       (businessNameLower.includes('pepsi') && content.includes('pepsico'));
+      
+      // Create variations of the business name to check
+      const nameVariations = [
+        businessNameLower,
+        businessNameLower.replace('-', ' '),
+        businessNameLower.replace(' ', '-'),
+        businessNameLower.replace(/[^a-z0-9]/g, ''), // Remove all special characters
+      ];
+      
+      // Special brand variations for major companies
+      const brandVariations = [];
+      if (businessNameLower.includes('coca-cola') || businessNameLower.includes('coca cola')) {
+        brandVariations.push('coke', 'coca-cola', 'coca cola', 'cocacola');
+      }
+      if (businessNameLower.includes('pepsi')) {
+        brandVariations.push('pepsi', 'pepsico', 'pepsi-cola');
+      }
+      if (businessNameLower.includes('akamai')) {
+        brandVariations.push('akamai', 'akamai technologies');
+      }
+      
+      const allVariations = [...nameVariations, ...brandVariations];
+      
+      // Check if any variation is mentioned in the response
+      const mentioned = allVariations.some(variation => {
+        if (variation.length < 3) return false; // Skip very short variations
+        return content.includes(variation);
+      });
+      
+      console.log(`Business: ${businessName}, Variations checked: ${allVariations.join(', ')}, Mentioned: ${mentioned}`);
 
       return {
         ...prompt,
