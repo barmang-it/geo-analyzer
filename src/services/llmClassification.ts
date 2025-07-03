@@ -1,6 +1,6 @@
 
 // Main API exports - this file now acts as the main entry point
-import { BusinessClassification, TestPrompt } from './classification/types';
+import { BusinessClassification, TestPrompt, WebsiteContent } from './classification/types';
 import { extractGeographyHints } from './classification/geographyExtractor';
 import { performBusinessClassification } from './classification/businessClassifier';
 import { calculateGeoScore } from './classification/scoreCalculator';
@@ -9,13 +9,6 @@ import { generateTestPrompts } from './classification/promptGenerator';
 export type { BusinessClassification, TestPrompt };
 
 // Mock website content extraction for frontend (in production, this would be done server-side)
-interface WebsiteContent {
-  title: string;
-  description: string;
-  content: string;
-  hasStructuredData: boolean;
-}
-
 const extractBasicWebsiteInfo = async (url: string): Promise<WebsiteContent | null> => {
   // In a real implementation, this would be handled server-side
   // For now, return null to maintain existing behavior
@@ -32,8 +25,8 @@ export const classifyBusiness = async (businessName: string, websiteUrl: string)
   // Simulate LLM analysis with longer delay for more realistic processing
   await new Promise(resolve => setTimeout(resolve, 2000));
   
-  // Use more sophisticated business classification with website content
-  const classification = performBusinessClassification(businessName, websiteUrl, websiteContent || undefined);
+  // Use LLM-powered business classification with website content
+  const classification = await performBusinessClassification(businessName, websiteUrl, websiteContent || undefined);
   
   return {
     ...classification,

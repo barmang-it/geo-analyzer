@@ -13,6 +13,13 @@ export interface TestPrompt {
   response?: string;
 }
 
+export interface WebsiteContent {
+  title: string;
+  description: string;
+  content: string;
+  hasStructuredData: boolean;
+}
+
 export interface AnalysisResult {
   classification: BusinessClassification;
   testPrompts: TestPrompt[];
