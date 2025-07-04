@@ -41,14 +41,28 @@ export function detectBusinessMention(
   const mentioned = allVariations.some(variation => {
     if (variation.length < 2) return false; // Skip very short variations
     
-    // Check for exact match or word boundary match
-    const exactMatch = content.includes(variation);
-    const wordBoundaryMatch = new RegExp(`\\b${variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(content);
-    
-    if (exactMatch || wordBoundaryMatch) {
-      matchedVariation = variation;
-      console.log(`Found match: "${variation}" in response`);
-      return true;
+    // More strict matching - require word boundaries for short names
+    if (variation.length <= 4) {
+      const wordBoundaryMatch = new RegExp(`\\b${variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(content);
+      if (wordBoundaryMatch) {
+        matchedVariation = variation;
+        console.log(`Found exact word boundary match: "${variation}" in response`);
+        return true;
+      }
+    } else {
+      // For longer names, allow partial matches but still prefer word boundaries
+      const wordBoundaryMatch = new RegExp(`\\b${variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(content);
+      const partialMatch = content.includes(variation);
+      
+      if (wordBoundaryMatch) {
+        matchedVariation = variation;
+        console.log(`Found word boundary match: "${variation}" in response`);
+        return true;
+      } else if (partialMatch) {
+        matchedVariation = variation;
+        console.log(`Found partial match: "${variation}" in response`);
+        return true;
+      }
     }
     return false;
   });
