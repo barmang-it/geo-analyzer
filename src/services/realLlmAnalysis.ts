@@ -2,10 +2,34 @@
 import { UsageTracker } from './usageTracking';
 import { getMockAnalysis } from './analysis/mockAnalysis';
 import { generateDynamicStrengthsAndGaps, generateDynamicRecommendations } from './analysis/dynamicAnalysis';
+import { supabase } from '@/integrations/supabase/client';
 
 // Re-export types for backward compatibility
 export type { AnalysisResult, BusinessClassification, TestPrompt } from './classification/types';
 export { generateDynamicStrengthsAndGaps, generateDynamicRecommendations };
+
+const validateInput = (businessName: string, websiteUrl: string): boolean => {
+  // Basic input validation
+  if (!businessName?.trim() || businessName.trim().length < 2) {
+    return false;
+  }
+  
+  if (!websiteUrl?.trim()) {
+    return false;
+  }
+  
+  // Basic URL validation
+  try {
+    const url = new URL(websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
+const sanitizeInput = (input: string): string => {
+  return input.trim().replace(/[<>'"]/g, '');
+};
 
 export const analyzeWebsite = async (
   businessName: string, 
@@ -14,7 +38,16 @@ export const analyzeWebsite = async (
   const usageTracker = UsageTracker.getInstance();
   const clientIP = 'anonymous'; // In production, this would be the user's IP
   
-  console.log('Starting cost-protected website analysis...', { businessName, websiteUrl });
+  console.log('Starting cost-protected website analysis...', { 
+    businessName: sanitizeInput(businessName), 
+    websiteUrl: sanitizeInput(websiteUrl)
+  });
+  
+  // Input validation
+  if (!validateInput(businessName, websiteUrl)) {
+    console.log('Invalid input parameters, falling back to mock analysis');
+    return getMockAnalysis(businessName, websiteUrl, 'Invalid input parameters');
+  }
   
   // Check rate limits
   const rateLimitInfo = usageTracker.checkRateLimit(clientIP);
@@ -29,39 +62,33 @@ export const analyzeWebsite = async (
     return getMockAnalysis(businessName, websiteUrl, 'Daily budget exceeded');
   }
   
-  // Attempt real analysis
-  const supabaseUrl = "https://cxeyudjaehsmtmqnzklk.supabase.co"
-  const functionUrl = `${supabaseUrl}/functions/v1/analyze-website`
-  
+  // Attempt real analysis using Supabase function
   try {
     console.log('Attempting real LLM analysis...')
     
-    const response = await fetch(functionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4ZXl1ZGphZWhzbXRtcW56a2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwNDA1OTUsImV4cCI6MjA2NjYxNjU5NX0.kH-nWJME9-UYvINUvPcO9DyWjVu9gVZQgc3ZxyNyPWY`
-      },
-      body: JSON.stringify({
-        businessName,
-        websiteUrl
-      })
-    })
+    const { data, error } = await supabase.functions.invoke('analyze-website', {
+      body: {
+        businessName: sanitizeInput(businessName),
+        websiteUrl: sanitizeInput(websiteUrl)
+      }
+    });
     
-    if (!response.ok) {
-      throw new Error(`Analysis failed: ${response.status}`)
+    if (error) {
+      throw new Error(`Analysis failed: ${error.message}`);
     }
     
-    const result = await response.json()
+    if (!data) {
+      throw new Error('No data returned from analysis');
+    }
     
     // Record successful scan
     usageTracker.recordScan(clientIP);
     
-    console.log('Real analysis complete:', result)
-    return result
+    console.log('Real analysis complete:', data);
+    return data;
     
   } catch (error) {
-    console.error('Real analysis failed, falling back to mock:', error)
-    return getMockAnalysis(businessName, websiteUrl, 'API failure fallback')
+    console.error('Real analysis failed, falling back to mock:', error);
+    return getMockAnalysis(businessName, websiteUrl, 'API failure fallback');
   }
 }

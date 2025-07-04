@@ -7,20 +7,40 @@ import { Shield, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 export const AdminLogin = () => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = login(password);
-    if (!success) {
-      setError('Invalid admin password');
-      setPassword('');
-    } else {
-      setError('');
+    
+    if (!email.trim() || !password.trim()) {
+      setError('Please enter both email and password');
+      return;
     }
+
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const success = await login(email, password);
+      if (!success) {
+        setError('Invalid email or password');
+        setPassword('');
+      }
+    } catch (error) {
+      setError('Login failed. Please try again.');
+      console.error('Login error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
   return (
@@ -33,13 +53,27 @@ export const AdminLogin = () => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Input
+              type="email"
+              placeholder="Admin email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-10"
+              required
+              autoComplete="email"
+            />
+          </div>
+          
           <div className="relative">
             <Input
               type={showPassword ? 'text' : 'password'}
-              placeholder="Enter admin password"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="pr-10"
+              className="pr-10 h-10"
+              required
+              autoComplete="current-password"
             />
             <Button
               type="button"
@@ -51,11 +85,18 @@ export const AdminLogin = () => {
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </Button>
           </div>
+          
           {error && (
             <p className="text-sm text-red-600">{error}</p>
           )}
-          <Button type="submit" className="w-full" size="sm">
-            Access Dashboard
+          
+          <Button 
+            type="submit" 
+            className="w-full" 
+            size="sm"
+            disabled={isLoading || !email.trim() || !password.trim() || !isValidEmail(email)}
+          >
+            {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
       </CardContent>

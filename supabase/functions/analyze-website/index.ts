@@ -1,186 +1,125 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { corsHeaders } from '../_shared/cors.ts'
-import { extractWebsiteContent } from './websiteExtractor.ts'
-import { classifyBusinessWithLLM } from './businessClassifier.ts'
-import { testPromptsInParallel } from './promptTester.ts'
-import { calculateScores } from './scoreCalculator.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsHeaders } from "../_shared/cors.ts";
+import { classifyBusinessWithLLM } from './businessClassifier.ts';
+import { testPromptsInParallel } from './promptTester.ts';
+import { calculateGeoScore } from './scoreCalculator.ts';
+import { extractWebsiteContent } from './websiteExtractor.ts';
 
-// Circuit breaker state
-let circuitBreakerOpen = false;
-let failureCount = 0;
-let lastFailureTime = 0;
-const FAILURE_THRESHOLD = 5;
-const CIRCUIT_RESET_TIME = 5 * 60 * 1000; // 5 minutes
+// Input validation
+const validateInput = (businessName: string, websiteUrl: string): boolean => {
+  if (!businessName?.trim() || businessName.trim().length < 2 || businessName.trim().length > 100) {
+    return false;
+  }
+  
+  if (!websiteUrl?.trim() || websiteUrl.trim().length > 500) {
+    return false;
+  }
+  
+  try {
+    const url = new URL(websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
 
-// Usage tracking
-const dailyUsage = new Map<string, number>();
-
-interface AnalyzeRequest {
-  businessName: string;
-  websiteUrl: string;
-}
+const sanitizeInput = (input: string): string => {
+  return input.trim().replace(/[<>'"]/g, '').substring(0, 200);
+};
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
-  const startTime = Date.now();
-
   try {
-    console.log('=== Starting analysis request ===');
+    const { businessName, websiteUrl } = await req.json();
     
-    // Check OpenAI API key
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openaiKey) {
-      console.error('OpenAI API key not configured');
+    console.log(`Analysis request: ${businessName} - ${websiteUrl}`);
+    
+    // Input validation
+    if (!validateInput(businessName, websiteUrl)) {
       return new Response(
-        JSON.stringify({ error: 'OpenAI API key not configured' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500,
-        },
+        JSON.stringify({ error: 'Invalid input parameters' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
-
-    // Check circuit breaker
-    if (circuitBreakerOpen) {
-      const timeSinceLastFailure = Date.now() - lastFailureTime;
-      if (timeSinceLastFailure < CIRCUIT_RESET_TIME) {
-        console.log('Circuit breaker open, rejecting request');
-        return new Response(
-          JSON.stringify({ 
-            error: 'Service temporarily unavailable due to high failure rate',
-            fallbackToMock: true 
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 503,
-          },
-        )
-      } else {
-        // Reset circuit breaker
-        circuitBreakerOpen = false;
-        failureCount = 0;
-        console.log('Circuit breaker reset');
-      }
-    }
-
-    // Check daily usage limits
-    const today = new Date().toISOString().split('T')[0];
-    const todayUsage = dailyUsage.get(today) || 0;
-    const DAILY_LIMIT = 1000; // Max 1000 scans per day
     
-    if (todayUsage >= DAILY_LIMIT) {
-      console.log('Daily usage limit exceeded');
-      return new Response(
-        JSON.stringify({ 
-          error: 'Daily usage limit exceeded',
-          fallbackToMock: true 
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 429,
-        },
+    // Sanitize inputs
+    const safeBusiness = sanitizeInput(businessName);
+    const safeUrl = sanitizeInput(websiteUrl);
+    
+    // Extract website content
+    console.log('Extracting website content...');
+    const websiteContent = await extractWebsiteContent(safeUrl);
+    console.log('Website content extracted:', websiteContent ? 'Success' : 'Failed');
+    
+    // Classify business using LLM
+    console.log('Classifying business...');
+    const classification = await classifyBusinessWithLLM(safeBusiness, safeUrl, websiteContent);
+    console.log('Classification complete:', classification);
+    
+    // Test prompts in parallel with timeout protection
+    console.log('Testing prompts...');
+    const testPrompts = await Promise.race([
+      testPromptsInParallel(safeBusiness, safeUrl),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Prompt testing timeout')), 45000)
       )
-    }
-
-    const { businessName, websiteUrl }: AnalyzeRequest = await req.json()
+    ]) as any[];
     
-    console.log(`Processing analysis for "${businessName}" (${websiteUrl}) - Usage: ${todayUsage + 1}/${DAILY_LIMIT}`);
+    console.log('Prompt testing complete');
     
-    // Start all operations in parallel for maximum speed
-    console.log('Starting parallel operations...');
-    const [websiteContentResult, classificationResult, promptTestResults] = await Promise.allSettled([
-      extractWebsiteContent(websiteUrl),
-      classifyBusinessWithLLM(businessName, websiteUrl),
-      testPromptsInParallel(businessName, websiteUrl)
-    ]);
-    
-    console.log('All parallel operations completed');
-    
-    // Handle results with fallbacks
-    const websiteContent = websiteContentResult.status === 'fulfilled' ? websiteContentResult.value : {
-      title: '', description: '', content: '', hasStructuredData: false
-    };
-    
-    const classification = classificationResult.status === 'fulfilled' ? classificationResult.value : {
-      industry: 'Technology', market: 'B2B SaaS', geography: 'US', domain: 'Software Solutions'
-    };
-
-    const promptResults = promptTestResults.status === 'fulfilled' ? promptTestResults.value : [];
-
-    console.log(`Prompt test results: ${promptResults.length} prompts tested`);
-    promptResults.forEach((result, index) => {
-      console.log(`  ${index + 1}. ${result.type}: ${result.response}`);
-    });
-
     // Calculate scores
-    const scores = calculateScores(classification, promptResults, websiteContent);
+    const llmMentions = testPrompts.filter(p => p.response === 'mentioned').length;
+    const geoScore = calculateGeoScore(
+      classification, 
+      testPrompts, 
+      websiteContent?.hasStructuredData || false
+    );
     
-    // Count mentions
-    const llmMentions = promptResults.filter(p => p.response === 'mentioned').length;
-    console.log(`Total LLM mentions found: ${llmMentions}/${promptResults.length}`);
-    
-    // Record successful usage
-    dailyUsage.set(today, todayUsage + 1);
-    
-    // Reset failure count on success
-    if (failureCount > 0) {
-      failureCount = 0;
-      console.log('Resetting failure count after successful request');
-    }
-
-    const processingTime = Date.now() - startTime;
-    console.log(`Analysis completed successfully in ${processingTime}ms`);
+    const benchmarkScore = Math.max(30, Math.min(95, 
+      Math.round((geoScore * 0.7) + (llmMentions * 8) + Math.random() * 10)
+    ));
     
     const result = {
+      businessName: safeBusiness,
+      websiteUrl: safeUrl,
       classification,
-      testPrompts: promptResults,
-      geoScore: scores.geoScore,
-      benchmarkScore: scores.benchmarkScore,
-      hasStructuredData: websiteContent.hasStructuredData,
+      testPrompts,
+      geoScore,
+      benchmarkScore,
       llmMentions,
-      processingTime,
-      usageInfo: {
-        dailyUsage: todayUsage + 1,
-        dailyLimit: DAILY_LIMIT,
-        costEstimate: (todayUsage + 1) * 0.0006
-      }
+      hasStructuredData: websiteContent?.hasStructuredData || false,
+      timestamp: new Date().toISOString()
     };
     
-    console.log('=== Analysis complete ===');
+    console.log('Analysis complete for:', safeBusiness);
     
     return new Response(
       JSON.stringify(result),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      },
-    )
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+    
   } catch (error) {
-    console.error('Analysis error:', error)
+    console.error('Analysis error:', error);
     
-    // Update circuit breaker
-    failureCount++;
-    lastFailureTime = Date.now();
-    
-    if (failureCount >= FAILURE_THRESHOLD) {
-      circuitBreakerOpen = true;
-      console.log(`Circuit breaker opened after ${failureCount} failures`);
-    }
+    // Sanitize error message for security
+    const safeErrorMessage = error.message?.includes('timeout') ? 
+      'Analysis timeout - please try again' : 
+      'Analysis failed - please try again later';
     
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        fallbackToMock: true,
-        circuitBreakerTriggered: circuitBreakerOpen
-      }),
-      {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      },
-    )
+      JSON.stringify({ error: safeErrorMessage }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
-})
+});
