@@ -1,3 +1,4 @@
+
 import { BusinessClassification } from '../types.ts';
 
 interface WebsiteContent {
@@ -12,7 +13,8 @@ export function performFallbackClassification(
   websiteUrl: string, 
   websiteContent?: WebsiteContent
 ): BusinessClassification {
-  const text = `${businessName} ${websiteUrl}`.toLowerCase();
+  const businessNameLower = businessName.toLowerCase();
+  const urlLower = websiteUrl.toLowerCase();
   
   // Combine website content for analysis
   let contentText = '';
@@ -20,10 +22,11 @@ export function performFallbackClassification(
     contentText = `${websiteContent.title} ${websiteContent.description} ${websiteContent.content}`.toLowerCase();
   }
   
-  const fullText = `${text} ${contentText}`;
+  const fullText = `${businessNameLower} ${urlLower} ${contentText}`;
   
-  // Enhanced major beverage brands detection
-  if (fullText.includes('coca-cola') || fullText.includes('coke') || fullText.includes('coca cola')) {
+  // PRIORITY 1: Major global beverage brands - check business name first
+  if (businessNameLower.includes('coca-cola') || businessNameLower.includes('coca cola') || 
+      businessNameLower === 'coke' || urlLower.includes('coca-cola')) {
     return {
       industry: 'Food & Beverage',
       market: 'Consumer Packaged Goods',
@@ -32,7 +35,8 @@ export function performFallbackClassification(
     }
   }
   
-  if (fullText.includes('pepsi') || fullText.includes('pepsico')) {
+  if (businessNameLower.includes('pepsi') || businessNameLower.includes('pepsico') || 
+      urlLower.includes('pepsi')) {
     return {
       industry: 'Food & Beverage',
       market: 'Consumer Packaged Goods',
@@ -41,7 +45,8 @@ export function performFallbackClassification(
     }
   }
   
-  if (fullText.includes('dr pepper') || fullText.includes('sprite') || fullText.includes('fanta')) {
+  if (businessNameLower.includes('dr pepper') || businessNameLower.includes('sprite') || 
+      businessNameLower.includes('fanta') || businessNameLower.includes('mountain dew')) {
     return {
       industry: 'Food & Beverage',
       market: 'Consumer Packaged Goods',
@@ -51,7 +56,7 @@ export function performFallbackClassification(
   }
   
   // Enhanced Akamai detection
-  if (fullText.includes('akamai') || 
+  if (businessNameLower.includes('akamai') || 
       (fullText.includes('cdn') && fullText.includes('security')) ||
       (fullText.includes('edge') && fullText.includes('computing') && fullText.includes('performance'))) {
     return {
@@ -86,6 +91,18 @@ export function performFallbackClassification(
     }
   }
   
+  // General beverage detection before general keywords
+  if (fullText.includes('beverage') || fullText.includes('soft drink') || fullText.includes('soda') ||
+      fullText.includes('juice') || fullText.includes('energy drink') || fullText.includes('water brand') ||
+      (fullText.includes('drink') && !fullText.includes('software'))) {
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'US',
+      domain: 'Consumer Products'
+    }
+  }
+  
   // Conglomerate detection
   const conglomerateKeywords = ['holdings', 'group', 'corporation', 'industries', 'conglomerate', 'diversified'];
   if (conglomerateKeywords.some(keyword => fullText.includes(keyword))) {
@@ -110,9 +127,8 @@ export function performFallbackClassification(
   }
   
   // Enhanced Food & Beverage detection
-  if (fullText.includes('food') || fullText.includes('beverage') || fullText.includes('restaurant') ||
-      fullText.includes('drink') || fullText.includes('snack') || fullText.includes('nutrition') ||
-      fullText.includes('soda') || fullText.includes('juice') || fullText.includes('water') ||
+  if (fullText.includes('food') || fullText.includes('restaurant') ||
+      fullText.includes('snack') || fullText.includes('nutrition') ||
       fullText.includes('coffee') || fullText.includes('tea') || fullText.includes('dairy')) {
     return {
       industry: 'Food & Beverage',

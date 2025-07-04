@@ -1,3 +1,4 @@
+
 import { performFallbackClassification } from './classifiers/fallbackClassifier.ts';
 import { BusinessClassification } from './types.ts';
 
@@ -48,9 +49,9 @@ Based on the actual website content above, classify this business. Pay special a
 - Their target market and geography
 - Technical capabilities mentioned
 
-For major global beverage brands like Coca-Cola, Pepsi, use:
+CRITICAL: For major global beverage brands like Coca-Cola, Pepsi, Dr Pepper, Sprite, Fanta, use:
 - Industry: "Food & Beverage"
-- Market: "Consumer Packaged Goods"
+- Market: "Consumer Packaged Goods" 
 - Domain: "Global Beverage Brand"
 
 For companies like Akamai (CDN/edge computing/security), use:
@@ -69,7 +70,7 @@ Return JSON only:
 }`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 8000); // Increased to 8s timeout
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -83,7 +84,7 @@ Return JSON only:
         messages: [
           {
             role: 'system',
-            content: 'You are a business classification expert. Analyze the provided website content to accurately classify businesses. Focus on what the company actually does based on their website content, not just their name. For major beverage brands like Coca-Cola, Pepsi classify as Food & Beverage industry with Consumer Packaged Goods market and Global Beverage Brand domain. For technology companies like Akamai (CDN/security/edge computing), classify as Technology industry with Cloud Infrastructure market and Cybersecurity & Performance domain. Respond only with valid JSON.'
+            content: 'You are a business classification expert. Analyze the provided website content to accurately classify businesses. Focus on what the company actually does based on their website content, not just their name. CRITICAL: For major beverage brands like Coca-Cola, Pepsi, Dr Pepper, Sprite, Fanta classify as Food & Beverage industry with Consumer Packaged Goods market and Global Beverage Brand domain. For technology companies like Akamai (CDN/security/edge computing), classify as Technology industry with Cloud Infrastructure market and Cybersecurity & Performance domain. Respond only with valid JSON.'
           },
           {
             role: 'user',
@@ -122,162 +123,5 @@ Return JSON only:
     
     // Enhanced fallback using website content
     return performFallbackClassification(businessName, websiteUrl, websiteContent);
-  }
-}
-
-function performFallbackClassification(
-  businessName: string, 
-  websiteUrl: string, 
-  websiteContent?: WebsiteContent
-): BusinessClassification {
-  const text = `${businessName} ${websiteUrl}`.toLowerCase();
-  
-  // Combine website content for analysis
-  let contentText = '';
-  if (websiteContent) {
-    contentText = `${websiteContent.title} ${websiteContent.description} ${websiteContent.content}`.toLowerCase();
-  }
-  
-  const fullText = `${text} ${contentText}`;
-  
-  // Enhanced major beverage brands detection
-  if (fullText.includes('coca-cola') || fullText.includes('coke') || fullText.includes('coca cola')) {
-    return {
-      industry: 'Food & Beverage',
-      market: 'Consumer Packaged Goods',
-      geography: 'Global',
-      domain: 'Global Beverage Brand'
-    }
-  }
-  
-  if (fullText.includes('pepsi') || fullText.includes('pepsico')) {
-    return {
-      industry: 'Food & Beverage',
-      market: 'Consumer Packaged Goods',
-      geography: 'Global',
-      domain: 'Global Beverage Brand'
-    }
-  }
-  
-  if (fullText.includes('dr pepper') || fullText.includes('sprite') || fullText.includes('fanta')) {
-    return {
-      industry: 'Food & Beverage',
-      market: 'Consumer Packaged Goods',
-      geography: 'Global',
-      domain: 'Global Beverage Brand'
-    }
-  }
-  
-  // Enhanced Akamai detection
-  if (fullText.includes('akamai') || 
-      (fullText.includes('cdn') && fullText.includes('security')) ||
-      (fullText.includes('edge') && fullText.includes('computing') && fullText.includes('performance'))) {
-    return {
-      industry: 'Technology',
-      market: 'Cloud Infrastructure',
-      geography: 'Global',
-      domain: 'Cybersecurity & Performance'
-    }
-  }
-  
-  // CloudFlare and similar CDN providers
-  if (fullText.includes('cloudflare') || fullText.includes('cloud flare') ||
-      (fullText.includes('content delivery') && fullText.includes('network'))) {
-    return {
-      industry: 'Technology',
-      market: 'Cloud Infrastructure',
-      geography: 'Global',
-      domain: 'Cybersecurity & Performance'
-    }
-  }
-  
-  // Enhanced security/performance detection
-  if (fullText.includes('cybersecurity') || fullText.includes('ddos protection') ||
-      fullText.includes('web application firewall') || fullText.includes('bot management') ||
-      fullText.includes('web performance') || fullText.includes('page speed') ||
-      fullText.includes('content optimization')) {
-    return {
-      industry: 'Technology',
-      market: 'Cloud Infrastructure',
-      geography: 'Global',
-      domain: 'Cybersecurity & Performance'
-    }
-  }
-  
-  // Conglomerate detection
-  const conglomerateKeywords = ['holdings', 'group', 'corporation', 'industries', 'conglomerate', 'diversified'];
-  if (conglomerateKeywords.some(keyword => fullText.includes(keyword))) {
-    return {
-      industry: 'Conglomerate',
-      market: 'Multi-Industry',
-      geography: 'Global',
-      domain: 'Diversified Conglomerate'
-    }
-  }
-  
-  // Technology companies
-  if (fullText.includes('software') || fullText.includes('saas') || fullText.includes('platform') ||
-      fullText.includes('api') || fullText.includes('cloud') || fullText.includes('developer') ||
-      fullText.includes('automation') || fullText.includes('integration')) {
-    return {
-      industry: 'Technology',
-      market: 'B2B SaaS',
-      geography: 'US',
-      domain: 'Software Solutions'
-    }
-  }
-  
-  // Enhanced Food & Beverage detection
-  if (fullText.includes('food') || fullText.includes('beverage') || fullText.includes('restaurant') ||
-      fullText.includes('drink') || fullText.includes('snack') || fullText.includes('nutrition') ||
-      fullText.includes('soda') || fullText.includes('juice') || fullText.includes('water') ||
-      fullText.includes('coffee') || fullText.includes('tea') || fullText.includes('dairy')) {
-    return {
-      industry: 'Food & Beverage',
-      market: 'Consumer Packaged Goods',
-      geography: 'US',
-      domain: 'Consumer Products'
-    }
-  }
-  
-  // Healthcare
-  if (fullText.includes('health') || fullText.includes('medical') || fullText.includes('pharma') ||
-      fullText.includes('clinic') || fullText.includes('hospital') || fullText.includes('wellness')) {
-    return {
-      industry: 'Healthcare',
-      market: 'Digital Health',
-      geography: 'US',
-      domain: 'Healthcare'
-    }
-  }
-  
-  // Financial Services
-  if (fullText.includes('bank') || fullText.includes('finance') || fullText.includes('payment') ||
-      fullText.includes('fintech') || fullText.includes('investment') || fullText.includes('insurance')) {
-    return {
-      industry: 'Financial Services',
-      market: 'Banking & Fintech',
-      geography: 'US',
-      domain: 'Financial Services'
-    }
-  }
-  
-  // E-commerce/Retail
-  if (fullText.includes('shop') || fullText.includes('store') || fullText.includes('retail') ||
-      fullText.includes('ecommerce') || fullText.includes('marketplace') || fullText.includes('buy')) {
-    return {
-      industry: 'Retail',
-      market: 'E-commerce',
-      geography: 'US',
-      domain: 'E-commerce'
-    }
-  }
-  
-  // Default fallback
-  return {
-    industry: 'Technology',
-    market: 'B2B SaaS',
-    geography: 'US',
-    domain: 'Software Solutions'
   }
 }

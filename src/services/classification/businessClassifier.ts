@@ -35,7 +35,7 @@ export const performBusinessClassification = async (
     console.log('LLM classification failed, falling back to rule-based:', error)
   }
   
-  // Fallback to rule-based classification only if LLM fails
+  // Enhanced fallback classification - check for major brands first
   return performRuleBasedClassification(businessName, websiteUrl, websiteContent)
 }
 
@@ -44,7 +44,8 @@ const performRuleBasedClassification = (
   websiteUrl: string,
   websiteContent?: WebsiteContent
 ): BusinessClassification => {
-  const text = `${businessName} ${websiteUrl}`.toLowerCase();
+  const businessNameLower = businessName.toLowerCase();
+  const urlLower = websiteUrl.toLowerCase();
   
   // Combine website content for enhanced analysis
   let contentText = '';
@@ -52,10 +53,11 @@ const performRuleBasedClassification = (
     contentText = `${websiteContent.title} ${websiteContent.description} ${websiteContent.content}`.toLowerCase();
   }
   
-  const fullText = `${text} ${contentText}`;
+  const fullText = `${businessNameLower} ${urlLower} ${contentText}`;
   
-  // Enhanced major beverage brands detection
-  if (fullText.includes('coca-cola') || fullText.includes('coke') || fullText.includes('coca cola')) {
+  // PRIORITY 1: Major global beverage brands - check business name first
+  if (businessNameLower.includes('coca-cola') || businessNameLower.includes('coca cola') || 
+      businessNameLower === 'coke' || urlLower.includes('coca-cola')) {
     return {
       industry: 'Food & Beverage',
       market: 'Consumer Packaged Goods',
@@ -65,7 +67,8 @@ const performRuleBasedClassification = (
     };
   }
   
-  if (fullText.includes('pepsi') || fullText.includes('pepsico')) {
+  if (businessNameLower.includes('pepsi') || businessNameLower.includes('pepsico') || 
+      urlLower.includes('pepsi')) {
     return {
       industry: 'Food & Beverage',
       market: 'Consumer Packaged Goods',
@@ -75,8 +78,19 @@ const performRuleBasedClassification = (
     };
   }
   
-  // Enhanced Akamai detection
-  if (fullText.includes('akamai') || 
+  if (businessNameLower.includes('dr pepper') || businessNameLower.includes('sprite') || 
+      businessNameLower.includes('fanta') || businessNameLower.includes('mountain dew')) {
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'Global',
+      category: 'Soft Drinks & Beverages',
+      domain: 'Global Beverage Brand'
+    };
+  }
+  
+  // PRIORITY 2: Technology companies like Akamai
+  if (businessNameLower.includes('akamai') || 
       (fullText.includes('cdn') && fullText.includes('security')) ||
       (fullText.includes('edge') && fullText.includes('computing') && fullText.includes('performance'))) {
     return {
@@ -85,6 +99,19 @@ const performRuleBasedClassification = (
       geography: 'Global',
       category: 'CDN, Security & Edge Computing',
       domain: 'Cybersecurity & Performance'
+    };
+  }
+  
+  // PRIORITY 3: General beverage and food keywords
+  if (fullText.includes('beverage') || fullText.includes('soft drink') || fullText.includes('soda') ||
+      fullText.includes('juice') || fullText.includes('energy drink') || fullText.includes('water brand') ||
+      (fullText.includes('drink') && !fullText.includes('software'))) {
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'US',
+      category: 'Beverages',
+      domain: 'Consumer Products'
     };
   }
   
@@ -100,7 +127,7 @@ const performRuleBasedClassification = (
     };
   }
   
-  // Default fallback
+  // Default fallback - but not for obvious beverage brands
   return {
     industry: 'Technology',
     market: 'B2B SaaS',
