@@ -59,6 +59,30 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
     );
   };
 
+  // Generate dynamic description based on business classification
+  const getTestPromptsDescription = () => {
+    const { industry, domain, market } = results.classification;
+    
+    if (industry === 'Food & Beverage' && domain === 'Global Beverage Brand') {
+      return `These prompts were tailored for major beverage brands to test AI recognition across industry-specific queries and competitor analysis.`;
+    }
+    
+    if (industry === 'Technology' && domain === 'Cybersecurity & Performance') {
+      return `These prompts were designed for cybersecurity and performance companies to evaluate visibility in technical discussions and industry comparisons.`;
+    }
+    
+    if (industry === 'Technology' && market === 'B2B SaaS') {
+      return `These prompts were crafted for B2B SaaS companies to assess recognition in software recommendations and industry analyses.`;
+    }
+    
+    if (industry === 'Conglomerate') {
+      return `These prompts were adapted for diversified conglomerates to test recognition across multiple business sectors and market discussions.`;
+    }
+    
+    // Generic fallback
+    return `These prompts were customized for ${industry.toLowerCase()} companies in the ${market.toLowerCase()} sector to evaluate AI recognition and industry visibility.`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
@@ -222,7 +246,7 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
             </CardHeader>
             <CardContent className="text-center">
               <div className="text-3xl font-bold text-indigo-600 mb-2">
-                {results.publicPresence.length}
+                {results.publicPresence?.length || 0}
               </div>
               <p className="text-sm text-gray-600">
                 Platforms found
@@ -236,10 +260,10 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
           <CardHeader>
             <CardTitle className="flex items-center text-xl font-bold text-gray-800">
               <Search className="w-5 h-5 mr-2 text-purple-600" />
-              Domain-Specific Test Prompts
+              Industry-Specific Test Prompts
             </CardTitle>
             <p className="text-gray-600">
-              These prompts were customized for your {results.classification.domain.toLowerCase()} business and tested across multiple LLMs
+              {getTestPromptsDescription()}
             </p>
           </CardHeader>
           <CardContent>
@@ -280,7 +304,7 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
             </CardHeader>
             <CardContent>
               <ul className="space-y-3">
-                {results.strengths.map((strength, index) => (
+                {results.strengths?.map((strength, index) => (
                   <li key={index} className="flex items-start">
                     <CheckCircle className="w-4 h-4 mr-3 mt-0.5 text-green-600" />
                     <span className="text-gray-700">{strength}</span>
@@ -299,7 +323,7 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
             </CardHeader>
             <CardContent>
               <ul className="space-y-3">
-                {results.gaps.map((gap, index) => (
+                {results.gaps?.map((gap, index) => (
                   <li key={index} className="flex items-start">
                     <AlertTriangle className="w-4 h-4 mr-3 mt-0.5 text-red-600" />
                     <span className="text-gray-700">{gap}</span>
@@ -322,7 +346,7 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {results.recommendations.map((recommendation, index) => (
+              {results.recommendations?.map((recommendation, index) => (
                 <div key={index} className="flex items-start p-4 bg-white rounded-lg shadow-sm">
                   <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-4">
                     {index + 1}
