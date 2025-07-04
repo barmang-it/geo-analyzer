@@ -1,7 +1,6 @@
-
 import { AnalysisResult, BusinessClassification } from '../classification/types';
 import { generateTestPrompts } from '../classification/promptGenerator';
-import { calculateMockGeoScore } from '../classification/scoreCalculator';
+import { calculateGeoScore } from '../classification/scoreCalculator';
 import { generateDynamicStrengthsAndGaps, generateDynamicRecommendations } from './dynamicAnalysis';
 
 export const getMockAnalysis = (
@@ -32,26 +31,19 @@ export const getMockAnalysis = (
   });
   
   const llmMentions = processedPrompts.filter(p => p.response === 'mentioned').length;
-  const geoScore = calculateMockGeoScore(classification, llmMentions, false);
+  const { geoScore, benchmarkScore } = calculateGeoScore(classification, businessName, processedPrompts);
   
   // Generate dynamic content
-  const { strengths, gaps } = generateDynamicStrengthsAndGaps(classification, geoScore, llmMentions > 3);
-  const recommendations = generateDynamicRecommendations(classification, geoScore, gaps);
+  const { strengths, gaps } = generateDynamicStrengthsAndGaps(classification, processedPrompts, geoScore, Math.random() > 0.7, llmMentions);
+  const recommendations = generateDynamicRecommendations(classification, processedPrompts, geoScore, Math.random() > 0.7, llmMentions);
   
   return {
-    businessName,
-    websiteUrl,
     classification,
     testPrompts: processedPrompts,
     geoScore,
-    benchmarkScore: getBenchmarkScore(classification),
+    benchmarkScore,
     llmMentions,
     hasStructuredData: Math.random() > 0.7, // Random but realistic
-    publicPresence: generatePublicPresence(businessName, classification),
-    strengths,
-    gaps,
-    recommendations,
-    timestamp: new Date().toISOString()
   };
 };
 

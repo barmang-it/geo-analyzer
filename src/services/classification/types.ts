@@ -21,10 +21,17 @@ export interface WebsiteContent {
 }
 
 export interface AnalysisResult {
+  businessName?: string;
+  websiteUrl?: string;
   classification: BusinessClassification;
   testPrompts: TestPrompt[];
   geoScore: number;
   benchmarkScore: number;
   hasStructuredData: boolean;
   llmMentions: number;
+  publicPresence?: string[];
+  strengths?: string[];
+  gaps?: string[];
+  recommendations?: string[];
+  timestamp?: string;
 }
