@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -259,6 +258,31 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
             </CardContent>
           </Card>
         </div>
+
+        {/* Public Presence Details */}
+        {results.publicPresence && results.publicPresence.length > 0 && (
+          <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center text-xl font-bold text-gray-800">
+                <Globe className="w-5 h-5 mr-2 text-indigo-600" />
+                Public Presence Found
+              </CardTitle>
+              <p className="text-gray-600">
+                Platforms and sources where your business presence was detected
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {results.publicPresence.map((platform, index) => (
+                  <div key={index} className="flex items-center p-3 bg-gray-50/50 rounded-lg border">
+                    <CheckCircle className="w-4 h-4 mr-3 text-green-600" />
+                    <span className="text-gray-700 font-medium">{platform}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Test Prompts Used */}
         <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm mb-8">
