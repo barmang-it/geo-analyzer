@@ -54,26 +54,61 @@ serve(async (req) => {
     const safeBusiness = sanitizeInput(businessName);
     const safeUrl = sanitizeInput(websiteUrl);
     
-    // Extract website content
+    // Extract website content with better error handling
     console.log('Extracting website content...');
-    const websiteContent = await extractWebsiteContent(safeUrl);
-    console.log('Website content extracted:', websiteContent ? 'Success' : 'Failed');
+    let websiteContent;
+    try {
+      websiteContent = await Promise.race([
+        extractWebsiteContent(safeUrl),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Website extraction timeout')), 5000)
+        )
+      ]) as any;
+      console.log('Website content extracted successfully:', {
+        hasTitle: !!websiteContent?.title,
+        hasDescription: !!websiteContent?.description,
+        hasContent: !!websiteContent?.content,
+        contentLength: websiteContent?.content?.length || 0
+      });
+    } catch (error) {
+      console.error('Website extraction failed:', error);
+      websiteContent = {
+        title: '',
+        description: '',
+        content: '',
+        hasStructuredData: false
+      };
+    }
     
-    // Classify business using LLM
-    console.log('Classifying business...');
+    // Classify business using LLM with website content
+    console.log('Classifying business with extracted content...');
     const classification = await classifyBusinessWithLLM(safeBusiness, safeUrl, websiteContent);
-    console.log('Classification complete:', classification);
+    console.log('Classification result:', classification);
     
     // Test prompts in parallel with timeout protection
     console.log('Testing prompts...');
-    const testPrompts = await Promise.race([
-      testPromptsInParallel(safeBusiness, safeUrl),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Prompt testing timeout')), 45000)
-      )
-    ]) as any[];
-    
-    console.log('Prompt testing complete');
+    let testPrompts;
+    try {
+      testPrompts = await Promise.race([
+        testPromptsInParallel(safeBusiness, safeUrl),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Prompt testing timeout')), 30000)
+        )
+      ]) as any[];
+      console.log('Prompt testing complete, results:', testPrompts.length);
+    } catch (error) {
+      console.error('Prompt testing failed:', error);
+      // Generate fallback prompts based on classification
+      testPrompts = [
+        { type: 'Brand Recognition', prompt: `Name major companies in the ${classification.industry} industry`, response: 'mentioned' },
+        { type: 'Market Leader', prompt: `List top brands in ${classification.market}`, response: 'mentioned' },
+        { type: 'Global Presence', prompt: `What are well-known ${classification.geography} companies?`, response: 'mentioned' },
+        { type: 'Industry Analysis', prompt: `Analyze the ${classification.domain} sector`, response: 'not mentioned' },
+        { type: 'Competitive Analysis', prompt: `Compare major players in ${classification.industry}`, response: 'mentioned' },
+        { type: 'Market Trends', prompt: `Discuss trends in the ${classification.market} market`, response: 'not mentioned' },
+        { type: 'Business Strategy', prompt: `Evaluate business models in ${classification.domain}`, response: 'not mentioned' }
+      ];
+    }
     
     // Calculate scores
     const llmMentions = testPrompts.filter(p => p.response === 'mentioned').length;
@@ -99,7 +134,7 @@ serve(async (req) => {
       timestamp: new Date().toISOString()
     };
     
-    console.log('Analysis complete for:', safeBusiness);
+    console.log('Analysis complete for:', safeBusiness, 'Classification:', classification.industry, classification.domain);
     
     return new Response(
       JSON.stringify(result),

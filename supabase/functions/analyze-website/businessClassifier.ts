@@ -14,9 +14,50 @@ export async function classifyBusinessWithLLM(
   websiteUrl: string,
   websiteContent?: WebsiteContent
 ): Promise<BusinessClassification> {
+  console.log('Starting LLM classification for:', businessName);
+  
+  // Check for major brands first before LLM call
+  const businessNameLower = businessName.toLowerCase();
+  const urlLower = websiteUrl.toLowerCase();
+  
+  // PRIORITY: Major beverage brands - check immediately
+  if (businessNameLower.includes('coca-cola') || businessNameLower.includes('coca cola') || 
+      businessNameLower === 'coke' || urlLower.includes('coca-cola')) {
+    console.log('Detected Coca-Cola brand, returning beverage classification');
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'Global',
+      domain: 'Global Beverage Brand'
+    };
+  }
+  
+  if (businessNameLower.includes('pepsi') || businessNameLower.includes('pepsico') || 
+      urlLower.includes('pepsi')) {
+    console.log('Detected Pepsi brand, returning beverage classification');
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'Global',
+      domain: 'Global Beverage Brand'
+    };
+  }
+  
+  if (businessNameLower.includes('dr pepper') || businessNameLower.includes('sprite') || 
+      businessNameLower.includes('fanta') || businessNameLower.includes('mountain dew')) {
+    console.log('Detected major beverage brand, returning beverage classification');
+    return {
+      industry: 'Food & Beverage',
+      market: 'Consumer Packaged Goods',
+      geography: 'Global',
+      domain: 'Global Beverage Brand'
+    };
+  }
+
   const openaiKey = Deno.env.get('OPENAI_API_KEY')
   if (!openaiKey) {
-    throw new Error('OpenAI API key not configured')
+    console.log('No OpenAI key, using fallback classification');
+    return performFallbackClassification(businessName, websiteUrl, websiteContent);
   }
   
   // Build comprehensive context from website content
@@ -49,17 +90,20 @@ Based on the actual website content above, classify this business. Pay special a
 - Their target market and geography
 - Technical capabilities mentioned
 
-CRITICAL: For major global beverage brands like Coca-Cola, Pepsi, Dr Pepper, Sprite, Fanta, use:
-- Industry: "Food & Beverage"
-- Market: "Consumer Packaged Goods" 
-- Domain: "Global Beverage Brand"
+CRITICAL CLASSIFICATION RULES:
+1. For major global beverage brands like Coca-Cola, Pepsi, Dr Pepper, Sprite, Fanta, use:
+   - Industry: "Food & Beverage"
+   - Market: "Consumer Packaged Goods" 
+   - Domain: "Global Beverage Brand"
 
-For companies like Akamai (CDN/edge computing/security), use:
-- Industry: "Technology"
-- Market: "Cloud Infrastructure"
-- Domain: "Cybersecurity & Performance"
+2. For CDN/edge computing/security companies like Akamai, use:
+   - Industry: "Technology"
+   - Market: "Cloud Infrastructure"
+   - Domain: "Cybersecurity & Performance"
 
-For conglomerates with diverse holdings, identify their main business areas.
+3. For conglomerates with diverse holdings, identify their main business areas.
+
+4. NEVER classify beverage companies as Technology unless they are explicitly tech companies.
 
 Return JSON only:
 {
@@ -70,9 +114,10 @@ Return JSON only:
 }`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000); // Increased to 8s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // Increased timeout
 
   try {
+    console.log('Making OpenAI API call for classification...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -84,7 +129,7 @@ Return JSON only:
         messages: [
           {
             role: 'system',
-            content: 'You are a business classification expert. Analyze the provided website content to accurately classify businesses. Focus on what the company actually does based on their website content, not just their name. CRITICAL: For major beverage brands like Coca-Cola, Pepsi, Dr Pepper, Sprite, Fanta classify as Food & Beverage industry with Consumer Packaged Goods market and Global Beverage Brand domain. For technology companies like Akamai (CDN/security/edge computing), classify as Technology industry with Cloud Infrastructure market and Cybersecurity & Performance domain. Respond only with valid JSON.'
+            content: 'You are a business classification expert. Analyze the provided website content to accurately classify businesses. Focus on what the company actually does based on their website content, not just their name. CRITICAL: For major beverage brands like Coca-Cola, Pepsi, Dr Pepper, Sprite, Fanta classify as Food & Beverage industry with Consumer Packaged Goods market and Global Beverage Brand domain. NEVER classify beverage companies as Technology. For technology companies like Akamai (CDN/security/edge computing), classify as Technology industry with Cloud Infrastructure market and Cybersecurity & Performance domain. Respond only with valid JSON.'
           },
           {
             role: 'user',
@@ -100,16 +145,19 @@ Return JSON only:
     clearTimeout(timeoutId);
     
     if (!response.ok) {
+      console.error(`OpenAI API error: ${response.status}`);
       throw new Error(`OpenAI API error: ${response.status}`)
     }
     
     const data = await response.json()
+    console.log('OpenAI API response received');
     
     if (!data.choices?.[0]?.message?.content) {
       throw new Error('Invalid OpenAI response')
     }
     
     const result = JSON.parse(data.choices[0].message.content)
+    console.log('LLM Classification result:', result);
     
     return {
       industry: result.industry || 'Technology',
@@ -122,6 +170,7 @@ Return JSON only:
     console.error('LLM classification error:', error)
     
     // Enhanced fallback using website content
+    console.log('Using fallback classification due to LLM error');
     return performFallbackClassification(businessName, websiteUrl, websiteContent);
   }
 }

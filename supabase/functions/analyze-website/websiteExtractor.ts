@@ -7,13 +7,15 @@ interface WebsiteContent {
 }
 
 export async function extractWebsiteContent(url: string): Promise<WebsiteContent> {
+  console.log('Starting website content extraction for:', url);
+  
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 2000); // Reduced to 2s
+  const timeoutId = setTimeout(() => controller.abort(), 4000); // Increased timeout
 
   try {
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; CiteMe-Bot/1.0)'
+        'User-Agent': 'Mozilla/5.0 (compatible; CiteMe-Bot/1.0; +https://citeme.ai)'
       },
       signal: controller.signal
     })
@@ -21,10 +23,12 @@ export async function extractWebsiteContent(url: string): Promise<WebsiteContent
     clearTimeout(timeoutId);
     
     if (!response.ok) {
+      console.error(`HTTP ${response.status} for ${url}`);
       throw new Error(`HTTP ${response.status}`)
     }
     
     const html = await response.text()
+    console.log('HTML content retrieved, length:', html.length);
     
     // More efficient extraction with single pass
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
@@ -37,7 +41,8 @@ export async function extractWebsiteContent(url: string): Promise<WebsiteContent
     let textContent = '';
     const mainMatches = html.match(/<main[^>]*>([\s\S]*?)<\/main>/i) ||
                        html.match(/<article[^>]*>([\s\S]*?)<\/article>/i) ||
-                       html.match(/<div[^>]*class=["'][^"']*content[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
+                       html.match(/<div[^>]*class=["'][^"']*content[^"']*["'][^>]*>([\s\S]*?)<\/div>/i) ||
+                       html.match(/<section[^>]*class=["'][^"']*hero[^"']*["'][^>]*>([\s\S]*?)<\/section>/i);
     
     if (mainMatches) {
       textContent = mainMatches[1];
@@ -52,25 +57,36 @@ export async function extractWebsiteContent(url: string): Promise<WebsiteContent
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
       .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '') // Remove navigation
       .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '') // Remove footer
+      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '') // Remove header
       .replace(/<[^>]*>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
-      .substring(0, 800) // Further reduced for speed
+      .substring(0, 1000) // Increased content length for better analysis
     
     // Quick structured data check
     const hasStructuredData = html.includes('application/ld+json') || 
                               html.includes('schema.org') ||
-                              html.includes('microdata')
+                              html.includes('microdata') ||
+                              html.includes('@type')
     
-    return {
+    const result = {
       title,
       description,
       content: textContent,
       hasStructuredData
-    }
+    };
+    
+    console.log('Website content extraction complete:', {
+      title: title.substring(0, 50) + '...',
+      description: description.substring(0, 50) + '...',
+      contentLength: textContent.length,
+      hasStructuredData
+    });
+    
+    return result;
   } catch (error) {
     clearTimeout(timeoutId);
-    console.error('Website extraction error:', error)
+    console.error('Website extraction error:', error);
     return {
       title: '',
       description: '',
