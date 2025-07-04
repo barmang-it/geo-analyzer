@@ -83,6 +83,11 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
     return `These prompts were customized for ${industry.toLowerCase()} companies in the ${market.toLowerCase()} sector to evaluate AI recognition and industry visibility.`;
   };
 
+  // Calculate actual mentions from test prompts for consistency
+  const actualMentions = results.testPrompts.filter(prompt => 
+    prompt.response === 'mentioned' || prompt.response?.includes('mentioned') || prompt.response?.includes('Mentioned')
+  ).length;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
@@ -210,11 +215,11 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
           <Card className="border-0 shadow-lg">
             <CardHeader className="text-center">
               <Target className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-              <CardTitle className="text-lg">LLM Mentions</CardTitle>
+              <CardTitle className="text-lg">AI Mentions</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
               <div className="text-3xl font-bold text-blue-600 mb-2">
-                {results.llmMentions}
+                {actualMentions}
               </div>
               <p className="text-sm text-gray-600">
                 Across {results.testPrompts.length} test prompts
@@ -268,27 +273,32 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {results.testPrompts.map((prompt, index) => (
-                <div key={index} className="border rounded-lg p-4 bg-gray-50/50">
-                  <div className="flex items-start justify-between mb-2">
-                    <Badge variant="outline" className="text-xs">
-                      {prompt.type}
-                    </Badge>
-                    {prompt.response && (
+              {results.testPrompts.map((prompt, index) => {
+                // Check for mentions more comprehensively
+                const isMentioned = prompt.response === 'mentioned' || 
+                                  prompt.response?.includes('mentioned') || 
+                                  prompt.response?.includes('Mentioned');
+                
+                return (
+                  <div key={index} className="border rounded-lg p-4 bg-gray-50/50">
+                    <div className="flex items-start justify-between mb-2">
+                      <Badge variant="outline" className="text-xs">
+                        {prompt.type}
+                      </Badge>
                       <div className={`text-xs px-2 py-1 rounded-full ${
-                        prompt.response.includes('mentioned') 
+                        isMentioned 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {prompt.response.includes('mentioned') ? '✓ Found' : '✗ Not Found'}
+                        {isMentioned ? '✓ Found' : '✗ Not Found'}
                       </div>
-                    )}
+                    </div>
+                    <p className="text-gray-700 text-sm leading-relaxed">
+                      "{prompt.prompt}"
+                    </p>
                   </div>
-                  <p className="text-gray-700 text-sm leading-relaxed">
-                    "{prompt.prompt}"
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
