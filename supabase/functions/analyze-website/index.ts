@@ -1,9 +1,8 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { classifyBusinessWithLLM } from './businessClassifier.ts';
 import { testPromptsInParallel } from './promptTester.ts';
-import { calculateGeoScore } from './scoreCalculator.ts';
+import { calculateScores } from './scoreCalculator.ts';
 import { extractWebsiteContent } from './websiteExtractor.ts';
 
 // Input validation
@@ -110,17 +109,13 @@ serve(async (req) => {
       ];
     }
     
-    // Calculate scores
+    // Calculate scores using the correct function name
     const llmMentions = testPrompts.filter(p => p.response === 'mentioned').length;
-    const geoScore = calculateGeoScore(
+    const { geoScore, benchmarkScore } = calculateScores(
       classification, 
       testPrompts, 
-      websiteContent?.hasStructuredData || false
+      websiteContent || { title: '', description: '', content: '', hasStructuredData: false }
     );
-    
-    const benchmarkScore = Math.max(30, Math.min(95, 
-      Math.round((geoScore * 0.7) + (llmMentions * 8) + Math.random() * 10)
-    ));
     
     const result = {
       businessName: safeBusiness,
