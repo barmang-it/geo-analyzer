@@ -3,51 +3,89 @@ import { generateTestPrompts } from '../classification/promptGenerator';
 import { calculateGeoScore } from '../classification/scoreCalculator';
 import { generateDynamicStrengthsAndGaps, generateDynamicRecommendations } from './dynamicAnalysis';
 
-export const getMockAnalysis = (
-  businessName: string, 
-  websiteUrl: string, 
-  reason: string = 'Mock analysis'
-): AnalysisResult => {
-  console.log(`Using mock analysis (${reason})`);
+export const getMockAnalysis = (businessName: string, websiteUrl: string, reason?: string): AnalysisResult => {
+  console.log(`Generating mock analysis for ${businessName} (${reason || 'fallback'})`);
   
-  // Use the same business classification logic as the real analysis
-  const classification = performMockBusinessClassification(businessName, websiteUrl);
-  console.log('Mock classification result:', classification);
-  
-  // Generate domain-specific test prompts
+  const classification = performBusinessClassification(businessName, websiteUrl);
   const testPrompts = generateTestPrompts(classification, businessName);
+  const geoScore = calculateGeoScore(classification, testPrompts);
   
-  // Calculate realistic mention probability based on business type and recognition
-  const mentionProbability = getMockMentionProbability(businessName, classification);
+  // Generate realistic public presence based on company
+  const publicPresence = generateMockPublicPresence(businessName, classification);
   
-  // Apply realistic responses to test prompts
-  const processedPrompts = testPrompts.map(prompt => {
-    // More sophisticated logic for determining mentions
-    const shouldBeMentioned = Math.random() < mentionProbability;
-    return {
-      ...prompt,
-      response: shouldBeMentioned ? 'mentioned' : 'not mentioned'
-    };
-  });
+  const { strengths, gaps } = generateDynamicStrengthsAndGaps(
+    classification,
+    testPrompts,
+    geoScore,
+    true,
+    4
+  );
   
-  const llmMentions = processedPrompts.filter(p => p.response === 'mentioned').length;
-  const { geoScore, benchmarkScore } = calculateGeoScore(classification, businessName, processedPrompts);
-  
-  // Generate dynamic content
-  const { strengths, gaps } = generateDynamicStrengthsAndGaps(classification, processedPrompts, geoScore, Math.random() > 0.7, llmMentions);
-  const recommendations = generateDynamicRecommendations(classification, processedPrompts, geoScore, Math.random() > 0.7, llmMentions);
+  const recommendations = generateDynamicRecommendations(
+    classification,
+    testPrompts,
+    geoScore,
+    true,
+    4
+  );
   
   return {
+    businessName,
+    websiteUrl,
     classification,
-    testPrompts: processedPrompts,
+    testPrompts,
     geoScore,
-    benchmarkScore,
-    llmMentions,
-    hasStructuredData: Math.random() > 0.7, // Random but realistic
+    benchmarkScore: 6.8,
+    hasStructuredData: Math.random() > 0.3,
+    llmMentions: testPrompts.filter(p => p.response?.includes('Mentioned')).length,
+    publicPresence,
+    strengths,
+    gaps,
+    recommendations,
+    timestamp: new Date().toISOString()
   };
 };
 
-const performMockBusinessClassification = (
+function generateMockPublicPresence(businessName: string, classification: BusinessClassification): string[] {
+  const lowerName = businessName.toLowerCase();
+  
+  // Major tech companies
+  if (lowerName.includes('microsoft') || lowerName.includes('google') || lowerName.includes('apple') || lowerName.includes('amazon')) {
+    return ['Wikipedia', 'Bloomberg', 'Reuters', 'TechCrunch', 'Forbes', 'Wall Street Journal', 'LinkedIn', 'SEC Filings', 'NASDAQ'];
+  }
+  
+  // Large beverage brands
+  if (lowerName.includes('coca-cola') || lowerName.includes('pepsi') || lowerName.includes('nestle')) {
+    return ['Wikipedia', 'Food & Wine', 'Beverage Industry', 'Forbes', 'Reuters', 'LinkedIn', 'SEC Filings'];
+  }
+  
+  // Technology/Cybersecurity companies
+  if (lowerName.includes('akamai') || classification.domain === 'Cybersecurity & Performance') {
+    return ['Wikipedia', 'TechCrunch', 'Cybersecurity & Infrastructure Security Agency', 'IEEE', 'LinkedIn', 'NASDAQ'];
+  }
+  
+  // Conglomerates
+  if (classification.industry === 'Conglomerate') {
+    return ['Wikipedia', 'Fortune', 'Harvard Business Review', 'Bloomberg', 'Wall Street Journal', 'LinkedIn'];
+  }
+  
+  // B2B SaaS companies
+  if (classification.market === 'B2B SaaS') {
+    return ['LinkedIn', 'G2', 'Capterra', 'SaaS Magazine', 'TechCrunch'];
+  }
+  
+  // Default for smaller/unknown companies
+  const basePlatforms = ['LinkedIn'];
+  const possiblePlatforms = ['Wikipedia', 'Local Business Directory', 'Industry Publications', 'Google My Business'];
+  
+  // Randomly add 1-3 additional platforms
+  const additionalCount = Math.floor(Math.random() * 3) + 1;
+  const shuffled = possiblePlatforms.sort(() => 0.5 - Math.random());
+  
+  return [...basePlatforms, ...shuffled.slice(0, additionalCount)];
+}
+
+const performBusinessClassification = (
   businessName: string, 
   websiteUrl: string
 ): BusinessClassification => {

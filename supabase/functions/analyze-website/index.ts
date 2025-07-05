@@ -1,9 +1,11 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { classifyBusinessWithLLM } from './businessClassifier.ts';
 import { testPromptsInParallel } from './promptTester.ts';
 import { calculateScores } from './scoreCalculator.ts';
 import { extractWebsiteContent } from './websiteExtractor.ts';
+import { detectPublicPresence } from './publicPresenceDetector.ts';
 
 // Input validation
 const validateInput = (businessName: string, websiteUrl: string): boolean => {
@@ -52,6 +54,18 @@ serve(async (req) => {
     // Sanitize inputs
     const safeBusiness = sanitizeInput(businessName);
     const safeUrl = sanitizeInput(websiteUrl);
+    
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiKey) {
+      console.error('OpenAI API key not configured');
+      return new Response(
+        JSON.stringify({ error: 'OpenAI API key not configured' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
     
     // Extract website content with better error handling
     console.log('Extracting website content...');
@@ -109,6 +123,22 @@ serve(async (req) => {
       ];
     }
     
+    // Detect public presence using LLM
+    console.log('Detecting public presence...');
+    let publicPresenceResult;
+    try {
+      publicPresenceResult = await Promise.race([
+        detectPublicPresence(safeBusiness, classification, openaiKey),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Public presence detection timeout')), 10000)
+        )
+      ]) as any;
+      console.log('Public presence detection complete:', publicPresenceResult);
+    } catch (error) {
+      console.error('Public presence detection failed:', error);
+      publicPresenceResult = { platforms: [], totalFound: 0 };
+    }
+    
     // Calculate scores using the correct function name
     const llmMentions = testPrompts.filter(p => p.response === 'mentioned').length;
     const { geoScore, benchmarkScore } = calculateScores(
@@ -126,10 +156,12 @@ serve(async (req) => {
       benchmarkScore,
       llmMentions,
       hasStructuredData: websiteContent?.hasStructuredData || false,
+      publicPresence: publicPresenceResult.platforms,
       timestamp: new Date().toISOString()
     };
     
     console.log('Analysis complete for:', safeBusiness, 'Classification:', classification.industry, classification.domain);
+    console.log('Public presence found:', publicPresenceResult.platforms);
     
     return new Response(
       JSON.stringify(result),
