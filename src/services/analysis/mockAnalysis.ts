@@ -1,3 +1,4 @@
+
 import { AnalysisResult, BusinessClassification } from '../classification/types';
 import { generateTestPrompts } from '../classification/promptGenerator';
 import { calculateGeoScore } from '../classification/scoreCalculator';
@@ -8,7 +9,7 @@ export const getMockAnalysis = (businessName: string, websiteUrl: string, reason
   
   const classification = performBusinessClassification(businessName, websiteUrl);
   const testPrompts = generateTestPrompts(classification, businessName);
-  const geoScore = calculateGeoScore(classification, testPrompts);
+  const { geoScore, benchmarkScore } = calculateGeoScore(classification, businessName, testPrompts);
   
   // Generate realistic public presence based on company
   const publicPresence = generateMockPublicPresence(businessName, classification);
@@ -35,7 +36,7 @@ export const getMockAnalysis = (businessName: string, websiteUrl: string, reason
     classification,
     testPrompts,
     geoScore,
-    benchmarkScore: getBenchmarkScore(classification),
+    benchmarkScore,
     hasStructuredData: Math.random() > 0.3,
     llmMentions: testPrompts.filter(p => p.response?.includes('Mentioned')).length,
     publicPresence,
@@ -157,21 +158,4 @@ const performBusinessClassification = (
     category: 'Software & Technology',
     domain: 'Software Solutions'
   };
-};
-
-const getBenchmarkScore = (classification: BusinessClassification): number => {
-  // Benchmark scores vary by industry and market
-  if (classification.domain === 'Global Beverage Brand') {
-    return 8.5; // High benchmark for major beverage brands
-  }
-  
-  if (classification.domain === 'Cybersecurity & Performance') {
-    return 7.2; // High for tech infrastructure companies
-  }
-  
-  if (classification.market === 'B2B SaaS') {
-    return 6.8; // Medium for SaaS companies
-  }
-  
-  return 6.5; // Default benchmark
 };
