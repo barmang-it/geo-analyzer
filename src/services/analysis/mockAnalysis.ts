@@ -35,7 +35,7 @@ export const getMockAnalysis = (businessName: string, websiteUrl: string, reason
     classification,
     testPrompts,
     geoScore,
-    benchmarkScore: 6.8,
+    benchmarkScore: getBenchmarkScore(classification),
     hasStructuredData: Math.random() > 0.3,
     llmMentions: testPrompts.filter(p => p.response?.includes('Mentioned')).length,
     publicPresence,
@@ -159,32 +159,6 @@ const performBusinessClassification = (
   };
 };
 
-const getMockMentionProbability = (
-  businessName: string, 
-  classification: BusinessClassification
-): number => {
-  const businessNameLower = businessName.toLowerCase();
-  
-  // Major global brands have higher mention probability
-  if (businessNameLower.includes('coca-cola') || businessNameLower.includes('pepsi')) {
-    return 0.85; // Very high for major beverage brands
-  }
-  
-  if (businessNameLower.includes('akamai')) {
-    return 0.70; // High for well-known tech companies
-  }
-  
-  // Geography affects mention probability
-  if (classification.geography === 'Global') {
-    return 0.60;
-  } else if (classification.geography === 'US') {
-    return 0.40;
-  }
-  
-  // Default for smaller/regional companies
-  return 0.25;
-};
-
 const getBenchmarkScore = (classification: BusinessClassification): number => {
   // Benchmark scores vary by industry and market
   if (classification.domain === 'Global Beverage Brand') {
@@ -200,22 +174,4 @@ const getBenchmarkScore = (classification: BusinessClassification): number => {
   }
   
   return 6.5; // Default benchmark
-};
-
-const generatePublicPresence = (
-  businessName: string, 
-  classification: BusinessClassification
-): string[] => {
-  const platforms = ['Website', 'LinkedIn'];
-  
-  // Major brands have more presence
-  if (classification.domain === 'Global Beverage Brand') {
-    platforms.push('Twitter', 'Facebook', 'Instagram', 'Wikipedia');
-  } else if (classification.geography === 'Global') {
-    platforms.push('Twitter', 'Wikipedia');
-  } else if (classification.market === 'B2B SaaS') {
-    platforms.push('Twitter', 'Product Hunt');
-  }
-  
-  return platforms;
 };
