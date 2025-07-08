@@ -89,7 +89,7 @@ const Index = () => {
         recommendations,
         llmMentions: analysisResult.llmMentions,
         hasStructuredData: analysisResult.hasStructuredData,
-        publicPresence: ["Website Analysis", "LLM Testing"],
+        publicPresence: analysisResult.publicPresence || [],
         classification: analysisResult.classification,
         testPrompts: analysisResult.testPrompts
       };
