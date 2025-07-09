@@ -10,6 +10,45 @@ export const generateFoodBeveragePrompts = (
   const geoText = geography === 'Global' ? 'worldwide' : `in ${geography}`;
   const geoTextAlt = geography === 'Global' ? 'globally' : `in ${geography}`;
 
+  // Determine if this is retail-focused based on market classification
+  const isRetailFocused = market.toLowerCase().includes('consumer') || 
+                         market.toLowerCase().includes('retail') ||
+                         market.toLowerCase().includes('packaged goods');
+
+  if (isRetailFocused) {
+    return [
+      {
+        type: "Retail Leaders",
+        prompt: `What are the largest retail companies and consumer brands ${geoText}?`
+      },
+      {
+        type: "Consumer Brands",
+        prompt: `Which consumer packaged goods companies dominate the market ${geoText}?`
+      },
+      {
+        type: "Market Share",
+        prompt: `What retail chains have the biggest market share ${geoTextAlt}?`
+      },
+      {
+        type: "Shopping Destinations",
+        prompt: `Where do consumers prefer to shop for everyday goods ${geoText}?`
+      },
+      {
+        type: "Supply Chain",
+        prompt: `Which companies have the most efficient retail supply chains ${geoTextAlt}?`
+      },
+      {
+        type: "Innovation Leaders",
+        prompt: `What retail companies are leading innovation in consumer experience ${geoText}?`
+      },
+      {
+        type: "Value Retailers",
+        prompt: `Which retailers offer the best value for consumer products ${geoText}?`
+      }
+    ];
+  }
+
+  // Default food & beverage prompts for non-retail companies
   return [
     {
       type: "Brand Leaders",

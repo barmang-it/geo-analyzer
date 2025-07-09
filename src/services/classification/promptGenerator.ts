@@ -15,16 +15,19 @@ export const generateTestPrompts = (
   
   let prompts: TestPrompt[] = [];
   
-  // Route to appropriate prompt generator based on industry and domain
-  if (industry === 'Food & Beverage' && domain === 'Global Beverage Brand') {
-    prompts = generateBeveragePrompts(geography, market, category, domain);
+  // Route to appropriate prompt generator based on industry first, then domain
+  if (industry === 'Food & Beverage') {
+    if (domain === 'Global Beverage Brand') {
+      prompts = generateBeveragePrompts(geography, market, category, domain);
+    } else {
+      prompts = generateFoodBeveragePrompts(geography, market, category, industry);
+    }
   } else if (industry === 'Conglomerate') {
     prompts = generateConglomeratePrompts(geography, market, category, domain, industry);
   } else if (industry === 'Technology') {
     prompts = generateTechnologyPrompts(geography, market, category, domain, industry);
-  } else if (industry === 'Food & Beverage') {
-    prompts = generateFoodBeveragePrompts(geography, market, category, industry);
   } else {
+    // For all other industries, use generic prompts that adapt to the specific industry/domain
     prompts = generateGenericPrompts(geography, market, category, domain, industry);
   }
   

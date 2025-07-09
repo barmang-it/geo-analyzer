@@ -76,9 +76,16 @@ function generateDomainSpecificPrompts(classification: BusinessClassification, b
   
   let prompts: TestPrompt[] = [];
   
-  // Special handling for major global beverage brands
-  if (industry === 'Food & Beverage' && domain === 'Global Beverage Brand') {
-    prompts = generateBeveragePrompts(geography, market);
+  // Route based on industry first, then domain - ensuring appropriate prompts for each business type
+  if (industry === 'Food & Beverage') {
+    if (domain === 'Global Beverage Brand') {
+      prompts = generateBeveragePrompts(geography, market);
+    } else if (market.toLowerCase().includes('consumer') || market.toLowerCase().includes('retail')) {
+      // Generate retail-focused prompts for consumer/retail food & beverage companies
+      prompts = generateRetailFocusedPrompts(geography, market);
+    } else {
+      prompts = generateGenericPrompts(geography, market, domain, industry);
+    }
   } else if (industry === 'Conglomerate') {
     prompts = generateConglomeratePrompts(geography, market, domain, industry);
   } else if (domain === 'Cybersecurity & Performance' || domain === 'Cybersecurity') {
@@ -90,4 +97,40 @@ function generateDomainSpecificPrompts(classification: BusinessClassification, b
   }
   
   return prompts.slice(0, 7); // Ensure exactly 7 prompts
+}
+
+function generateRetailFocusedPrompts(geography: string, market: string): TestPrompt[] {
+  const geoText = geography === 'Global' ? 'worldwide' : `in ${geography}`;
+  const geoTextAlt = geography === 'Global' ? 'globally' : `in ${geography}`;
+
+  return [
+    {
+      type: "Retail Leaders",
+      prompt: `What are the largest retail companies and consumer brands ${geoText}?`
+    },
+    {
+      type: "Consumer Brands",
+      prompt: `Which consumer packaged goods companies dominate the market ${geoText}?`
+    },
+    {
+      type: "Market Share",
+      prompt: `What retail chains have the biggest market share ${geoTextAlt}?`
+    },
+    {
+      type: "Shopping Destinations",
+      prompt: `Where do consumers prefer to shop for everyday goods ${geoText}?`
+    },
+    {
+      type: "Supply Chain",
+      prompt: `Which companies have the most efficient retail supply chains ${geoTextAlt}?`
+    },
+    {
+      type: "Innovation Leaders",
+      prompt: `What retail companies are leading innovation in consumer experience ${geoText}?`
+    },
+    {
+      type: "Value Retailers",
+      prompt: `Which retailers offer the best value for consumer products ${geoText}?`
+    }
+  ];
 }
