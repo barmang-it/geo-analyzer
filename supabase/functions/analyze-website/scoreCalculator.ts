@@ -58,12 +58,18 @@ export function calculateScores(
   
   const finalScore = Math.max(0, Math.min(10, baseScore + variation));
   
-  // Industry benchmarks
+  // Industry benchmarks - matches client-side scoreCalculator
   const benchmarks: Record<string, number> = {
+    'Food & Beverage': 7.2,
     'Technology': 6.8,
     'Healthcare': 6.1,
-    'Finance': 6.5,
+    'Financial Services': 6.5,
+    'Finance': 6.5, // Legacy compatibility
     'Retail': 6.3,
+    'Automotive': 6.7,
+    'Energy': 5.9,
+    'Business Services': 5.5,
+    'Conglomerate': 6.4,
     'Other': 6.0
   }
   
