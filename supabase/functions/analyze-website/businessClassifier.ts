@@ -1,5 +1,5 @@
 
-import { performFallbackClassification } from './classifiers/fallbackClassifier.ts';
+import { performIntelligentClassification } from './classifiers/intelligentClassifier.ts';
 import { BusinessClassification } from './types.ts';
 
 interface WebsiteContent {
@@ -14,91 +14,12 @@ export async function classifyBusinessWithLLM(
   websiteUrl: string,
   websiteContent?: WebsiteContent
 ): Promise<BusinessClassification> {
-  console.log('Starting LLM classification for:', businessName);
+  console.log('Starting intelligent classification for:', businessName);
   
-  // Check for major brands first before LLM call
-  const businessNameLower = businessName.toLowerCase();
-  const urlLower = websiteUrl.toLowerCase();
-  
-  // PRIORITY: Major global tech companies
-  if (businessNameLower.includes('microsoft') || urlLower.includes('microsoft')) {
-    console.log('Detected Microsoft, returning global tech classification');
-    return {
-      industry: 'Technology',
-      market: 'Enterprise Software',
-      geography: 'Global',
-      domain: 'Enterprise Software'
-    };
-  }
-  
-  if (businessNameLower.includes('apple') || urlLower.includes('apple')) {
-    console.log('Detected Apple, returning global tech classification');
-    return {
-      industry: 'Technology',
-      market: 'Consumer Electronics',
-      geography: 'Global',
-      domain: 'Consumer Electronics'
-    };
-  }
-  
-  if (businessNameLower.includes('google') || urlLower.includes('google')) {
-    console.log('Detected Google, returning global tech classification');
-    return {
-      industry: 'Technology',
-      market: 'Cloud Infrastructure',
-      geography: 'Global',
-      domain: 'Cloud & Search'
-    };
-  }
-  
-  if (businessNameLower.includes('amazon') || urlLower.includes('amazon')) {
-    console.log('Detected Amazon, returning global tech classification');
-    return {
-      industry: 'Technology',
-      market: 'Cloud Infrastructure',
-      geography: 'Global',
-      domain: 'Cloud & E-commerce'
-    };
-  }
-  
-  // PRIORITY: Major beverage brands - check immediately
-  if (businessNameLower.includes('coca-cola') || businessNameLower.includes('coca cola') || 
-      businessNameLower === 'coke' || urlLower.includes('coca-cola')) {
-    console.log('Detected Coca-Cola brand, returning beverage classification');
-    return {
-      industry: 'Food & Beverage',
-      market: 'Consumer Packaged Goods',
-      geography: 'Global',
-      domain: 'Global Beverage Brand'
-    };
-  }
-  
-  if (businessNameLower.includes('pepsi') || businessNameLower.includes('pepsico') || 
-      urlLower.includes('pepsi')) {
-    console.log('Detected Pepsi brand, returning beverage classification');
-    return {
-      industry: 'Food & Beverage',
-      market: 'Consumer Packaged Goods',
-      geography: 'Global',
-      domain: 'Global Beverage Brand'
-    };
-  }
-  
-  if (businessNameLower.includes('dr pepper') || businessNameLower.includes('sprite') || 
-      businessNameLower.includes('fanta') || businessNameLower.includes('mountain dew')) {
-    console.log('Detected major beverage brand, returning beverage classification');
-    return {
-      industry: 'Food & Beverage',
-      market: 'Consumer Packaged Goods',
-      geography: 'Global',
-      domain: 'Global Beverage Brand'
-    };
-  }
-
   const openaiKey = Deno.env.get('OPENAI_API_KEY')
   if (!openaiKey) {
-    console.log('No OpenAI key, using fallback classification');
-    return performFallbackClassification(businessName, websiteUrl, websiteContent);
+    console.log('No OpenAI key, using intelligent classification');
+    return performIntelligentClassification(businessName, websiteUrl, websiteContent);
   }
   
   // Build comprehensive context from website content
@@ -130,38 +51,31 @@ Based on the actual website content above, classify this business. Pay special a
 - Industry-specific terminology in their content
 - Their target market and geography
 - Technical capabilities mentioned
+- Global presence indicators (international offices, worldwide operations, stock exchanges, etc.)
 
-CRITICAL CLASSIFICATION RULES:
-1. For major global tech companies like Microsoft, Apple, Google, Amazon, use:
-   - Geography: "Global" (NEVER "US" for these companies)
-   - Industry: "Technology"
+CRITICAL GEOGRAPHY CLASSIFICATION:
+- Look for indicators of global presence: "international", "worldwide", "global", "offices in multiple countries", "publicly traded", "fortune 500", "nasdaq", "nyse", stock exchanges
+- Major corporations with international presence should be classified as "Global"
+- Only classify as "US" if the business is clearly US-only with no international presence
+- Consider domain extensions (.com doesn't automatically mean US-only)
+- Look for subsidiary offices, international operations, or global customer base
 
-2. For major global beverage brands like Coca-Cola, Pepsi, Dr Pepper, Sprite, Fanta, use:
-   - Industry: "Food & Beverage"
-   - Market: "Consumer Packaged Goods" 
-   - Geography: "Global"
-   - Domain: "Global Beverage Brand"
-
-3. For CDN/edge computing/security companies like Akamai, use:
-   - Industry: "Technology"
-   - Market: "Cloud Infrastructure"
-   - Geography: "Global"
-   - Domain: "Cybersecurity & Performance"
-
-4. For conglomerates with diverse holdings, identify their main business areas.
-
-5. NEVER classify global companies as having only "US" geography unless they are truly US-only.
+INDUSTRY CLASSIFICATION RULES:
+1. Analyze the actual business content and services offered
+2. Don't rely solely on company names - analyze what they actually do
+3. For conglomerates, identify their main business areas
+4. Technology companies should be properly subcategorized (enterprise software, consumer electronics, cloud infrastructure, etc.)
 
 Return JSON only:
 {
   "industry": "Technology OR Healthcare OR Finance OR Retail OR Energy OR Automotive OR Food & Beverage OR Conglomerate OR Other",
   "market": "Cloud Infrastructure OR B2B SaaS OR E-commerce OR Consumer OR Enterprise OR Cybersecurity OR Multi-Industry OR Consumer Packaged Goods OR Consumer Electronics OR Other", 
   "geography": "Global OR US OR EU OR Asia OR Other",
-  "domain": "Cybersecurity & Performance OR Performance & CDN OR Software Solutions OR Consumer Electronics OR Financial Services OR Healthcare OR E-commerce OR Professional Services OR Diversified Conglomerate OR Global Beverage Brand OR Enterprise Software OR Cloud & Search OR Cloud & E-commerce OR Other"
+  "domain": "Cybersecurity & Performance OR Performance & CDN OR Software Solutions OR Consumer Electronics OR Financial Services OR Healthcare OR E-commerce OR Professional Services OR Diversified Conglomerate OR Consumer Products OR Enterprise Software OR Cloud & Infrastructure OR Other"
 }`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // Increased timeout
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
 
   try {
     console.log('Making OpenAI API call for classification...');
@@ -176,7 +90,7 @@ Return JSON only:
         messages: [
           {
             role: 'system',
-            content: 'You are a business classification expert. Analyze the provided website content to accurately classify businesses. Focus on what the company actually does based on their website content, not just their name. CRITICAL: For major global tech companies like Microsoft, Apple, Google, Amazon classify with "Global" geography, NEVER "US". For major beverage brands like Coca-Cola, Pepsi, Dr Pepper, Sprite, Fanta classify as Food & Beverage industry with Consumer Packaged Goods market and Global Beverage Brand domain. NEVER classify beverage companies as Technology. For technology companies like Akamai (CDN/security/edge computing), classify as Technology industry with Cloud Infrastructure market and Cybersecurity & Performance domain. Respond only with valid JSON.'
+            content: 'You are a business classification expert. Analyze the provided website content to accurately classify businesses. Focus on what the company actually does based on their website content, not just their name. Pay special attention to geography - look for global presence indicators like international offices, worldwide operations, stock exchanges, subsidiaries. Major corporations should be classified as "Global" if they have international presence. Only classify as "US" if clearly US-only. Respond only with valid JSON.'
           },
           {
             role: 'user',
@@ -216,8 +130,8 @@ Return JSON only:
     clearTimeout(timeoutId);
     console.error('LLM classification error:', error)
     
-    // Enhanced fallback using website content
-    console.log('Using fallback classification due to LLM error');
-    return performFallbackClassification(businessName, websiteUrl, websiteContent);
+    // Use intelligent classification as fallback
+    console.log('Using intelligent classification due to LLM error');
+    return performIntelligentClassification(businessName, websiteUrl, websiteContent);
   }
 }

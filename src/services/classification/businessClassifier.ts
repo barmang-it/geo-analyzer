@@ -1,6 +1,6 @@
 
 import { BusinessClassification, WebsiteContent } from './types';
-import { classifyMajorBrand } from './classifiers/majorBrandsClassifier';
+import { performIntelligentClassification } from './classifiers/intelligentClassifier';
 
 export const performBusinessClassification = async (
   businessName: string, 
@@ -33,113 +33,12 @@ export const performBusinessClassification = async (
       }
     }
   } catch (error) {
-    console.log('LLM classification failed, falling back to rule-based:', error)
+    console.log('LLM classification failed, falling back to intelligent classifier:', error)
   }
   
-  // Enhanced fallback classification - check for major brands first
-  return performRuleBasedClassification(businessName, websiteUrl, websiteContent)
-}
-
-const performRuleBasedClassification = (
-  businessName: string, 
-  websiteUrl: string,
-  websiteContent?: WebsiteContent
-): BusinessClassification => {
-  const businessNameLower = businessName.toLowerCase();
-  const urlLower = websiteUrl.toLowerCase();
+  // Use intelligent classification system
+  const contentText = websiteContent ? 
+    `${websiteContent.title} ${websiteContent.description} ${websiteContent.content}` : '';
   
-  // Combine website content for enhanced analysis
-  let contentText = '';
-  if (websiteContent) {
-    contentText = `${websiteContent.title} ${websiteContent.description} ${websiteContent.content}`.toLowerCase();
-  }
-  
-  const fullText = `${businessNameLower} ${urlLower} ${contentText}`;
-  
-  // PRIORITY 1: Check major brands first using the dedicated classifier
-  const majorBrandResult = classifyMajorBrand(fullText);
-  if (majorBrandResult) {
-    return majorBrandResult;
-  }
-  
-  // PRIORITY 2: Major global beverage brands - check business name first
-  if (businessNameLower.includes('coca-cola') || businessNameLower.includes('coca cola') || 
-      businessNameLower === 'coke' || urlLower.includes('coca-cola')) {
-    return {
-      industry: 'Food & Beverage',
-      market: 'Consumer Packaged Goods',
-      geography: 'Global',
-      category: 'Soft Drinks & Beverages',
-      domain: 'Global Beverage Brand'
-    };
-  }
-  
-  if (businessNameLower.includes('pepsi') || businessNameLower.includes('pepsico') || 
-      urlLower.includes('pepsi')) {
-    return {
-      industry: 'Food & Beverage',
-      market: 'Consumer Packaged Goods',
-      geography: 'Global',
-      category: 'Soft Drinks & Snacks',
-      domain: 'Global Beverage Brand'
-    };
-  }
-  
-  if (businessNameLower.includes('dr pepper') || businessNameLower.includes('sprite') || 
-      businessNameLower.includes('fanta') || businessNameLower.includes('mountain dew')) {
-    return {
-      industry: 'Food & Beverage',
-      market: 'Consumer Packaged Goods',
-      geography: 'Global',
-      category: 'Soft Drinks & Beverages',
-      domain: 'Global Beverage Brand'
-    };
-  }
-  
-  // PRIORITY 3: Technology companies like Akamai
-  if (businessNameLower.includes('akamai') || 
-      (fullText.includes('cdn') && fullText.includes('security')) ||
-      (fullText.includes('edge') && fullText.includes('computing') && fullText.includes('performance'))) {
-    return {
-      industry: 'Technology',
-      market: 'Cloud Infrastructure',
-      geography: 'Global',
-      category: 'CDN, Security & Edge Computing',
-      domain: 'Cybersecurity & Performance'
-    };
-  }
-  
-  // PRIORITY 4: General beverage and food keywords
-  if (fullText.includes('beverage') || fullText.includes('soft drink') || fullText.includes('soda') ||
-      fullText.includes('juice') || fullText.includes('energy drink') || fullText.includes('water brand') ||
-      (fullText.includes('drink') && !fullText.includes('software'))) {
-    return {
-      industry: 'Food & Beverage',
-      market: 'Consumer Packaged Goods',
-      geography: 'US',
-      category: 'Beverages',
-      domain: 'Consumer Products'
-    };
-  }
-  
-  // Technology companies
-  if (fullText.includes('software') || fullText.includes('saas') || fullText.includes('platform') ||
-      fullText.includes('api') || fullText.includes('cloud') || fullText.includes('developer')) {
-    return {
-      industry: 'Technology',
-      market: 'B2B SaaS',
-      geography: 'US',
-      category: 'Software & Cloud Services',
-      domain: 'Software Solutions'
-    };
-  }
-  
-  // Default fallback - but not for obvious beverage brands
-  return {
-    industry: 'Technology',
-    market: 'B2B SaaS',
-    geography: 'US',
-    category: 'Software & Cloud Services',
-    domain: 'Software Solutions'
-  };
+  return performIntelligentClassification(businessName, websiteUrl, contentText);
 }
