@@ -75,7 +75,7 @@ async function generateDynamicPrompts(
   const { industry, market, geography, domain, category } = classification;
   const geoText = geography === 'Global' ? 'worldwide' : `in ${geography}`;
 
-  const prompt = `Generate exactly 7 test prompts that would likely mention companies similar to "${businessName}" in real conversations or queries. 
+  const prompt = `Generate exactly 7 test prompts that would naturally mention leading companies in this business space WITHOUT explicitly naming any specific company. These are questions people might genuinely ask about the industry.
 
 Business Classification:
 - Industry: ${industry}
@@ -84,12 +84,21 @@ Business Classification:
 - Domain: ${domain}
 - Category: ${category}
 
-Create prompts that would naturally result in mentioning companies like this one. The prompts should be:
-1. Realistic questions people might ask
-2. Relevant to the business type and market
+Create generic industry questions that would naturally result in mentioning top companies in this space. The prompts should be:
+1. Generic questions about the industry/market (NO company names mentioned)
+2. Questions about "top companies", "leading brands", "best providers" etc.
 3. Geographically appropriate (${geoText})
 4. Industry-specific and contextual
-5. Varied in approach (competitors, recommendations, comparisons, etc.)
+5. Varied in approach (market leaders, recommendations, comparisons, innovations, etc.)
+
+Examples of GOOD prompts:
+- "What are the top 10 retail chains in the US?"
+- "Which companies lead the cloud computing market?"
+- "What are the best food delivery apps available?"
+
+Examples of BAD prompts (avoid these):
+- "Who are Walmart's competitors?" (mentions specific company)
+- "How does Amazon compare to..." (mentions specific company)
 
 Return ONLY a JSON array with this exact format:
 [
@@ -98,7 +107,7 @@ Return ONLY a JSON array with this exact format:
   ...
 ]
 
-Make sure each prompt type name is brief (2-3 words) and each prompt is a natural question that would likely generate mentions of companies in this space.`;
+Make sure each prompt type name is brief (2-3 words) and each prompt is a natural question that would organically mention leading companies in this space.`;
 
   try {
     console.log('Generating dynamic prompts using ChatGPT...');
