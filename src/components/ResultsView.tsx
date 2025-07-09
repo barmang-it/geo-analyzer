@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertTriangle, CheckCircle, Download, Share, RotateCcw, TrendingUp, Target, Globe, Search, MapPin, Building, Tag, Factory, ShoppingCart } from "lucide-react";
 import { ScanData, ScanResults } from "@/pages/Index";
+import { FeedbackForm } from "./FeedbackForm";
 
 interface ResultsViewProps {
   results: ScanResults;
@@ -298,7 +299,6 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
           <CardContent>
             <div className="space-y-4">
               {results.testPrompts.map((prompt, index) => {
-                // Check for mentions more comprehensively
                 const isMentioned = prompt.response === 'mentioned' || 
                                   prompt.response?.includes('mentioned') || 
                                   prompt.response?.includes('Mentioned');
@@ -369,7 +369,7 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
         </div>
 
         {/* Recommendations */}
-        <Card className="border-0 shadow-xl bg-gradient-to-r from-blue-50 to-purple-50">
+        <Card className="border-0 shadow-xl bg-gradient-to-r from-blue-50 to-purple-50 mb-8">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-gray-800 text-center">
               🚀 Recommended Actions
@@ -393,6 +393,14 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
             </div>
           </CardContent>
         </Card>
+
+        {/* Feedback Form */}
+        <div className="mb-8">
+          <FeedbackForm 
+            businessName={scanData.businessName}
+            websiteUrl={scanData.websiteUrl}
+          />
+        </div>
 
         {/* CTA */}
         <div className="text-center mt-12">

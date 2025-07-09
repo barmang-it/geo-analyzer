@@ -9,6 +9,7 @@ import { ProcessingView } from "@/components/ProcessingView";
 import { ResultsView } from "@/components/ResultsView";
 import { CostMonitor } from "@/components/CostMonitor";
 import { UsageTracker } from "@/services/usageTracking";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   analyzeWebsite, 
   generateDynamicStrengthsAndGaps, 
