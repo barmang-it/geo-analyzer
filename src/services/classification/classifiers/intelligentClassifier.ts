@@ -89,6 +89,28 @@ export const performIntelligentClassification = (
     }
   };
   
+  // Category classification based on business size and scope
+  const getCategory = (industry: string, geography: string): string => {
+    // Global companies are typically Enterprise level
+    if (geography === 'Global') return 'Enterprise';
+    
+    // Industry-specific category determination
+    switch (industry) {
+      case 'Technology':
+        if (fullText.includes('startup') || fullText.includes('small')) return 'SMB';
+        if (fullText.includes('enterprise') || fullText.includes('corporation')) return 'Enterprise';
+        return 'Mid-Market';
+      case 'Conglomerate':
+        return 'Enterprise';
+      case 'Healthcare':
+      case 'Financial Services':
+      case 'Energy':
+        return fullText.includes('local') || fullText.includes('regional') ? 'SMB' : 'Mid-Market';
+      default:
+        return 'SMB';
+    }
+  };
+  
   // Domain classification
   const getDomain = (industry: string, market: string): string => {
     if (industry === 'Technology') {
@@ -112,12 +134,14 @@ export const performIntelligentClassification = (
   };
   
   const market = getMarket(bestIndustry);
+  const category = getCategory(bestIndustry, geography);
   const domain = getDomain(bestIndustry, market);
   
   return {
     industry: bestIndustry,
     market,
     geography,
+    category,
     domain
   };
 };
