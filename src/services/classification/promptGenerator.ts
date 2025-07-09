@@ -1,35 +1,16 @@
 
 import { BusinessClassification, TestPrompt } from './types';
 import { getMentionProbability } from './scoreCalculator';
-import { generateBeveragePrompts } from './prompts/beveragePrompts';
-import { generateConglomeratePrompts } from './prompts/conglomeratePrompts';
-import { generateTechnologyPrompts } from './prompts/technologyPrompts';
-import { generateFoodBeveragePrompts } from './prompts/foodBeveragePrompts';
-import { generateGenericPrompts } from './prompts/genericPrompts';
+import { generateDynamicTestPrompts } from './dynamicPromptGenerator';
 
-export const generateTestPrompts = (
+export const generateTestPrompts = async (
   classification: BusinessClassification, 
   businessName: string
-): TestPrompt[] => {
-  const { industry, market, geography, category, domain } = classification;
+): Promise<TestPrompt[]> => {
+  console.log('Generating dynamic test prompts for:', businessName, classification);
   
-  let prompts: TestPrompt[] = [];
-  
-  // Route to appropriate prompt generator based on industry first, then domain
-  if (industry === 'Food & Beverage') {
-    if (domain === 'Global Beverage Brand') {
-      prompts = generateBeveragePrompts(geography, market, category, domain);
-    } else {
-      prompts = generateFoodBeveragePrompts(geography, market, category, industry);
-    }
-  } else if (industry === 'Conglomerate') {
-    prompts = generateConglomeratePrompts(geography, market, category, domain, industry);
-  } else if (industry === 'Technology') {
-    prompts = generateTechnologyPrompts(geography, market, category, domain, industry);
-  } else {
-    // For all other industries, use generic prompts that adapt to the specific industry/domain
-    prompts = generateGenericPrompts(geography, market, category, domain, industry);
-  }
+  // Use dynamic prompt generation via ChatGPT
+  const prompts = await generateDynamicTestPrompts(classification, businessName);
   
   // Ensure exactly 7 prompts
   const finalPrompts = prompts.slice(0, 7);

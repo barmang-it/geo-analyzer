@@ -2,10 +2,6 @@
 import { classifyBusinessWithLLM } from './businessClassifier.ts';
 import { callOpenAI } from './utils/openaiClient.ts';
 import { detectBusinessMention } from './utils/mentionDetector.ts';
-import { generateBeveragePrompts } from './domainPrompts/beveragePrompts.ts';
-import { generateConglomeratePrompts } from './domainPrompts/conglomeratePrompts.ts';
-import { generateCybersecurityPrompts, generateCDNPrompts } from './domainPrompts/technologyPrompts.ts';
-import { generateGenericPrompts } from './domainPrompts/genericPrompts.ts';
 import { TestPrompt, BusinessClassification } from './types.ts';
 
 export async function testPromptsInParallel(businessName: string, websiteUrl: string): Promise<TestPrompt[]> {
@@ -17,20 +13,20 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
 
   console.log(`Testing prompts for business: ${businessName}, website: ${websiteUrl}`);
 
-  // Get classification to generate domain-specific prompts
+  // Get classification to generate dynamic prompts
   const classification = await classifyBusinessWithLLM(businessName, websiteUrl);
   console.log(`Classification result:`, classification);
   
-  // Generate comprehensive prompts based on all classification dimensions
-  const prompts = generateDomainSpecificPrompts(classification, businessName);
-  console.log(`Generated ${prompts.length} prompts for testing`);
+  // Generate dynamic prompts using ChatGPT
+  const prompts = await generateDynamicPrompts(classification, businessName, openaiKey);
+  console.log(`Generated ${prompts.length} dynamic prompts for testing`);
 
   // Test all prompts with proper error handling and longer timeout
   const testPromises = prompts.map(async (prompt, index) => {
     try {
       console.log(`Testing prompt ${index + 1}/${prompts.length}: ${prompt.type}`);
       
-      const responseContent = await callOpenAI(prompt.prompt, openaiKey, 10000); // 10 second timeout
+      const responseContent = await callOpenAI(prompt.prompt, openaiKey, 10000);
       
       if (!responseContent) {
         console.error(`No response received for prompt: ${prompt.type}`);
@@ -71,66 +67,120 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
   return finalResults;
 }
 
-function generateDomainSpecificPrompts(classification: BusinessClassification, businessName: string): TestPrompt[] {
-  const { industry, market, geography, domain } = classification;
-  
-  let prompts: TestPrompt[] = [];
-  
-  // Route based on industry first, then domain - ensuring appropriate prompts for each business type
-  if (industry === 'Food & Beverage') {
-    if (domain === 'Global Beverage Brand') {
-      prompts = generateBeveragePrompts(geography, market);
-    } else if (market.toLowerCase().includes('consumer') || market.toLowerCase().includes('retail')) {
-      // Generate retail-focused prompts for consumer/retail food & beverage companies
-      prompts = generateRetailFocusedPrompts(geography, market);
-    } else {
-      prompts = generateGenericPrompts(geography, market, domain, industry);
-    }
-  } else if (industry === 'Conglomerate') {
-    prompts = generateConglomeratePrompts(geography, market, domain, industry);
-  } else if (domain === 'Cybersecurity & Performance' || domain === 'Cybersecurity') {
-    prompts = generateCybersecurityPrompts(geography, market, domain, industry);
-  } else if (domain === 'Performance & CDN') {
-    prompts = generateCDNPrompts(geography, market, domain, industry);
-  } else {
-    prompts = generateGenericPrompts(geography, market, domain, industry);
-  }
-  
-  return prompts.slice(0, 7); // Ensure exactly 7 prompts
-}
-
-function generateRetailFocusedPrompts(geography: string, market: string): TestPrompt[] {
+async function generateDynamicPrompts(
+  classification: BusinessClassification, 
+  businessName: string,
+  openaiKey: string
+): Promise<TestPrompt[]> {
+  const { industry, market, geography, domain, category } = classification;
   const geoText = geography === 'Global' ? 'worldwide' : `in ${geography}`;
-  const geoTextAlt = geography === 'Global' ? 'globally' : `in ${geography}`;
 
-  return [
-    {
-      type: "Retail Leaders",
-      prompt: `What are the largest retail companies and consumer brands ${geoText}?`
-    },
-    {
-      type: "Consumer Brands",
-      prompt: `Which consumer packaged goods companies dominate the market ${geoText}?`
-    },
-    {
-      type: "Market Share",
-      prompt: `What retail chains have the biggest market share ${geoTextAlt}?`
-    },
-    {
-      type: "Shopping Destinations",
-      prompt: `Where do consumers prefer to shop for everyday goods ${geoText}?`
-    },
-    {
-      type: "Supply Chain",
-      prompt: `Which companies have the most efficient retail supply chains ${geoTextAlt}?`
-    },
-    {
-      type: "Innovation Leaders",
-      prompt: `What retail companies are leading innovation in consumer experience ${geoText}?`
-    },
-    {
-      type: "Value Retailers",
-      prompt: `Which retailers offer the best value for consumer products ${geoText}?`
+  const prompt = `Generate exactly 7 test prompts that would likely mention companies similar to "${businessName}" in real conversations or queries. 
+
+Business Classification:
+- Industry: ${industry}
+- Market: ${market}
+- Geography: ${geography}
+- Domain: ${domain}
+- Category: ${category}
+
+Create prompts that would naturally result in mentioning companies like this one. The prompts should be:
+1. Realistic questions people might ask
+2. Relevant to the business type and market
+3. Geographically appropriate (${geoText})
+4. Industry-specific and contextual
+5. Varied in approach (competitors, recommendations, comparisons, etc.)
+
+Return ONLY a JSON array with this exact format:
+[
+  {"type": "Brief descriptive name", "prompt": "The actual question/prompt"},
+  {"type": "Brief descriptive name", "prompt": "The actual question/prompt"},
+  ...
+]
+
+Make sure each prompt type name is brief (2-3 words) and each prompt is a natural question that would likely generate mentions of companies in this space.`;
+
+  try {
+    console.log('Generating dynamic prompts using ChatGPT...');
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert at generating test prompts for business analysis. You understand different industries and markets. Always return valid JSON arrays only.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 800,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
-  ];
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+
+    console.log('Generated dynamic prompts content:', content);
+
+    // Parse the JSON response
+    const prompts = JSON.parse(content);
+    
+    // Validate and ensure proper format
+    if (!Array.isArray(prompts) || prompts.length !== 7) {
+      throw new Error('Invalid prompt format from ChatGPT');
+    }
+    
+    return prompts.map((p: any) => ({
+      type: p.type || 'Generated Prompt',
+      prompt: p.prompt || 'What are leading companies in this industry?'
+    }));
+
+  } catch (error) {
+    console.error('Failed to generate dynamic prompts:', error);
+    
+    // Fallback to basic prompts
+    return [
+      {
+        type: "Industry Leaders",
+        prompt: `What are the top companies in the ${industry.toLowerCase()} industry ${geoText}?`
+      },
+      {
+        type: "Market Analysis",
+        prompt: `Which companies dominate the ${market.toLowerCase()} market ${geoText}?`
+      },
+      {
+        type: "Business Solutions",
+        prompt: `What are the best ${domain.toLowerCase()} solutions available ${geoText}?`
+      },
+      {
+        type: "Competitive Landscape",
+        prompt: `Who are the main competitors in ${industry.toLowerCase()} ${geoText}?`
+      },
+      {
+        type: "Industry Innovation",
+        prompt: `Which companies are leading innovation in ${industry.toLowerCase()} ${geoText}?`
+      },
+      {
+        type: "Service Providers",
+        prompt: `What companies provide ${domain.toLowerCase()} services ${geoText}?`
+      },
+      {
+        type: "Market Recommendations",
+        prompt: `Recommend top ${industry.toLowerCase()} companies for ${market.toLowerCase()} ${geoText}.`
+      }
+    ];
+  }
 }
