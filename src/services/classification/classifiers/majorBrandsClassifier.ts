@@ -23,6 +23,26 @@ export const classifyMajorBrand = (fullText: string): BusinessClassification | n
     };
   }
   
+  if (fullText.includes('google')) {
+    return {
+      industry: 'Technology',
+      market: 'Cloud Infrastructure',
+      geography: 'Global',
+      category: 'Search & Cloud Services',
+      domain: 'Cloud & Search'
+    };
+  }
+  
+  if (fullText.includes('amazon')) {
+    return {
+      industry: 'Technology',
+      market: 'Cloud Infrastructure',
+      geography: 'Global',
+      category: 'E-commerce & Cloud Services',
+      domain: 'Cloud & E-commerce'
+    };
+  }
+  
   if (fullText.includes('tesla')) {
     return {
       industry: 'Automotive',

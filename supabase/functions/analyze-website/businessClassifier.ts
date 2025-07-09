@@ -20,6 +20,47 @@ export async function classifyBusinessWithLLM(
   const businessNameLower = businessName.toLowerCase();
   const urlLower = websiteUrl.toLowerCase();
   
+  // PRIORITY: Major global tech companies
+  if (businessNameLower.includes('microsoft') || urlLower.includes('microsoft')) {
+    console.log('Detected Microsoft, returning global tech classification');
+    return {
+      industry: 'Technology',
+      market: 'Enterprise Software',
+      geography: 'Global',
+      domain: 'Enterprise Software'
+    };
+  }
+  
+  if (businessNameLower.includes('apple') || urlLower.includes('apple')) {
+    console.log('Detected Apple, returning global tech classification');
+    return {
+      industry: 'Technology',
+      market: 'Consumer Electronics',
+      geography: 'Global',
+      domain: 'Consumer Electronics'
+    };
+  }
+  
+  if (businessNameLower.includes('google') || urlLower.includes('google')) {
+    console.log('Detected Google, returning global tech classification');
+    return {
+      industry: 'Technology',
+      market: 'Cloud Infrastructure',
+      geography: 'Global',
+      domain: 'Cloud & Search'
+    };
+  }
+  
+  if (businessNameLower.includes('amazon') || urlLower.includes('amazon')) {
+    console.log('Detected Amazon, returning global tech classification');
+    return {
+      industry: 'Technology',
+      market: 'Cloud Infrastructure',
+      geography: 'Global',
+      domain: 'Cloud & E-commerce'
+    };
+  }
+  
   // PRIORITY: Major beverage brands - check immediately
   if (businessNameLower.includes('coca-cola') || businessNameLower.includes('coca cola') || 
       businessNameLower === 'coke' || urlLower.includes('coca-cola')) {
@@ -91,26 +132,32 @@ Based on the actual website content above, classify this business. Pay special a
 - Technical capabilities mentioned
 
 CRITICAL CLASSIFICATION RULES:
-1. For major global beverage brands like Coca-Cola, Pepsi, Dr Pepper, Sprite, Fanta, use:
+1. For major global tech companies like Microsoft, Apple, Google, Amazon, use:
+   - Geography: "Global" (NEVER "US" for these companies)
+   - Industry: "Technology"
+
+2. For major global beverage brands like Coca-Cola, Pepsi, Dr Pepper, Sprite, Fanta, use:
    - Industry: "Food & Beverage"
    - Market: "Consumer Packaged Goods" 
+   - Geography: "Global"
    - Domain: "Global Beverage Brand"
 
-2. For CDN/edge computing/security companies like Akamai, use:
+3. For CDN/edge computing/security companies like Akamai, use:
    - Industry: "Technology"
    - Market: "Cloud Infrastructure"
+   - Geography: "Global"
    - Domain: "Cybersecurity & Performance"
 
-3. For conglomerates with diverse holdings, identify their main business areas.
+4. For conglomerates with diverse holdings, identify their main business areas.
 
-4. NEVER classify beverage companies as Technology unless they are explicitly tech companies.
+5. NEVER classify global companies as having only "US" geography unless they are truly US-only.
 
 Return JSON only:
 {
   "industry": "Technology OR Healthcare OR Finance OR Retail OR Energy OR Automotive OR Food & Beverage OR Conglomerate OR Other",
-  "market": "Cloud Infrastructure OR B2B SaaS OR E-commerce OR Consumer OR Enterprise OR Cybersecurity OR Multi-Industry OR Consumer Packaged Goods OR Other", 
+  "market": "Cloud Infrastructure OR B2B SaaS OR E-commerce OR Consumer OR Enterprise OR Cybersecurity OR Multi-Industry OR Consumer Packaged Goods OR Consumer Electronics OR Other", 
   "geography": "Global OR US OR EU OR Asia OR Other",
-  "domain": "Cybersecurity & Performance OR Performance & CDN OR Software Solutions OR Consumer Electronics OR Financial Services OR Healthcare OR E-commerce OR Professional Services OR Diversified Conglomerate OR Global Beverage Brand OR Other"
+  "domain": "Cybersecurity & Performance OR Performance & CDN OR Software Solutions OR Consumer Electronics OR Financial Services OR Healthcare OR E-commerce OR Professional Services OR Diversified Conglomerate OR Global Beverage Brand OR Enterprise Software OR Cloud & Search OR Cloud & E-commerce OR Other"
 }`;
 
   const controller = new AbortController();
@@ -129,7 +176,7 @@ Return JSON only:
         messages: [
           {
             role: 'system',
-            content: 'You are a business classification expert. Analyze the provided website content to accurately classify businesses. Focus on what the company actually does based on their website content, not just their name. CRITICAL: For major beverage brands like Coca-Cola, Pepsi, Dr Pepper, Sprite, Fanta classify as Food & Beverage industry with Consumer Packaged Goods market and Global Beverage Brand domain. NEVER classify beverage companies as Technology. For technology companies like Akamai (CDN/security/edge computing), classify as Technology industry with Cloud Infrastructure market and Cybersecurity & Performance domain. Respond only with valid JSON.'
+            content: 'You are a business classification expert. Analyze the provided website content to accurately classify businesses. Focus on what the company actually does based on their website content, not just their name. CRITICAL: For major global tech companies like Microsoft, Apple, Google, Amazon classify with "Global" geography, NEVER "US". For major beverage brands like Coca-Cola, Pepsi, Dr Pepper, Sprite, Fanta classify as Food & Beverage industry with Consumer Packaged Goods market and Global Beverage Brand domain. NEVER classify beverage companies as Technology. For technology companies like Akamai (CDN/security/edge computing), classify as Technology industry with Cloud Infrastructure market and Cybersecurity & Performance domain. Respond only with valid JSON.'
           },
           {
             role: 'user',

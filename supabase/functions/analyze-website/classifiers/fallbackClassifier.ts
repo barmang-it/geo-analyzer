@@ -24,7 +24,44 @@ export function performFallbackClassification(
   
   const fullText = `${businessNameLower} ${urlLower} ${contentText}`;
   
-  // PRIORITY 1: Major global beverage brands - check business name first
+  // PRIORITY 1: Major global tech companies
+  if (businessNameLower.includes('microsoft') || urlLower.includes('microsoft')) {
+    return {
+      industry: 'Technology',
+      market: 'Enterprise Software',
+      geography: 'Global',
+      domain: 'Enterprise Software'
+    }
+  }
+  
+  if (businessNameLower.includes('apple') || urlLower.includes('apple')) {
+    return {
+      industry: 'Technology',
+      market: 'Consumer Electronics',
+      geography: 'Global',
+      domain: 'Consumer Electronics'
+    }
+  }
+  
+  if (businessNameLower.includes('google') || urlLower.includes('google')) {
+    return {
+      industry: 'Technology',
+      market: 'Cloud Infrastructure',
+      geography: 'Global',
+      domain: 'Cloud & Search'
+    }
+  }
+  
+  if (businessNameLower.includes('amazon') || urlLower.includes('amazon')) {
+    return {
+      industry: 'Technology',
+      market: 'Cloud Infrastructure',
+      geography: 'Global',
+      domain: 'Cloud & E-commerce'
+    }
+  }
+  
+  // PRIORITY 2: Major global beverage brands - check business name first
   if (businessNameLower.includes('coca-cola') || businessNameLower.includes('coca cola') || 
       businessNameLower === 'coke' || urlLower.includes('coca-cola')) {
     return {

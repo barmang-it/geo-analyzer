@@ -1,5 +1,6 @@
 
 import { BusinessClassification, WebsiteContent } from './types';
+import { classifyMajorBrand } from './classifiers/majorBrandsClassifier';
 
 export const performBusinessClassification = async (
   businessName: string, 
@@ -55,7 +56,13 @@ const performRuleBasedClassification = (
   
   const fullText = `${businessNameLower} ${urlLower} ${contentText}`;
   
-  // PRIORITY 1: Major global beverage brands - check business name first
+  // PRIORITY 1: Check major brands first using the dedicated classifier
+  const majorBrandResult = classifyMajorBrand(fullText);
+  if (majorBrandResult) {
+    return majorBrandResult;
+  }
+  
+  // PRIORITY 2: Major global beverage brands - check business name first
   if (businessNameLower.includes('coca-cola') || businessNameLower.includes('coca cola') || 
       businessNameLower === 'coke' || urlLower.includes('coca-cola')) {
     return {
@@ -89,7 +96,7 @@ const performRuleBasedClassification = (
     };
   }
   
-  // PRIORITY 2: Technology companies like Akamai
+  // PRIORITY 3: Technology companies like Akamai
   if (businessNameLower.includes('akamai') || 
       (fullText.includes('cdn') && fullText.includes('security')) ||
       (fullText.includes('edge') && fullText.includes('computing') && fullText.includes('performance'))) {
@@ -102,7 +109,7 @@ const performRuleBasedClassification = (
     };
   }
   
-  // PRIORITY 3: General beverage and food keywords
+  // PRIORITY 4: General beverage and food keywords
   if (fullText.includes('beverage') || fullText.includes('soft drink') || fullText.includes('soda') ||
       fullText.includes('juice') || fullText.includes('energy drink') || fullText.includes('water brand') ||
       (fullText.includes('drink') && !fullText.includes('software'))) {
