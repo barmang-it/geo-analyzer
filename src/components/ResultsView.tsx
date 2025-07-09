@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,7 +6,6 @@ import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertTriangle, CheckCircle, Download, Share, RotateCcw, TrendingUp, Target, Globe, Search, MapPin, Building, Tag, Factory, ShoppingCart } from "lucide-react";
 import { ScanData, ScanResults } from "@/pages/Index";
-import { FeedbackForm } from "./FeedbackForm";
 
 interface ResultsViewProps {
   results: ScanResults;
@@ -393,14 +393,6 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
             </div>
           </CardContent>
         </Card>
-
-        {/* Feedback Form */}
-        <div className="mb-8">
-          <FeedbackForm 
-            businessName={scanData.businessName}
-            websiteUrl={scanData.websiteUrl}
-          />
-        </div>
 
         {/* CTA */}
         <div className="text-center mt-12">
