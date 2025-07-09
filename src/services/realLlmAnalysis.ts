@@ -81,6 +81,40 @@ export const analyzeWebsite = async (
       throw new Error('No data returned from analysis');
     }
     
+    // Ensure consistent mention counting in returned data
+    if (data.testPrompts) {
+      const actualMentions = data.testPrompts.filter((prompt: any) => {
+        if (!prompt.response) return false;
+        const response = prompt.response.toLowerCase();
+        return response.includes('mentioned') || 
+               response.includes('found') || 
+               response === 'mentioned' ||
+               response.includes('mention');
+      }).length;
+      
+      // Update strengths and gaps with consistent mention counting
+      data.strengths = generateDynamicStrengthsAndGaps(
+        data.classification,
+        data.testPrompts,
+        data.geoScore,
+        data.hasStructuredData
+      ).strengths;
+      
+      data.gaps = generateDynamicStrengthsAndGaps(
+        data.classification,
+        data.testPrompts,
+        data.geoScore,
+        data.hasStructuredData
+      ).gaps;
+      
+      data.recommendations = generateDynamicRecommendations(
+        data.classification,
+        data.testPrompts,
+        data.geoScore,
+        data.hasStructuredData
+      );
+    }
+    
     // Record successful scan
     usageTracker.recordScan(clientIP);
     
