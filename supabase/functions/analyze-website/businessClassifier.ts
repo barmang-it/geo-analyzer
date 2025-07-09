@@ -65,13 +65,14 @@ INDUSTRY CLASSIFICATION RULES:
 2. Don't rely solely on company names - analyze what they actually do
 3. For conglomerates, identify their main business areas
 4. Technology companies should be properly subcategorized (enterprise software, consumer electronics, cloud infrastructure, etc.)
+5. RETAIL vs E-COMMERCE: Traditional retailers (brick-and-mortar stores, physical presence) should be "Retail" with "Retail & Consumer" market, while online-only businesses should be "E-commerce"
 
 Return JSON only:
 {
   "industry": "Technology OR Healthcare OR Finance OR Retail OR Energy OR Automotive OR Food & Beverage OR Conglomerate OR Other",
-  "market": "Cloud Infrastructure OR B2B SaaS OR E-commerce OR Consumer OR Enterprise OR Cybersecurity OR Multi-Industry OR Consumer Packaged Goods OR Consumer Electronics OR Other", 
+  "market": "Cloud Infrastructure OR B2B SaaS OR E-commerce OR Retail & Consumer OR Consumer OR Enterprise OR Cybersecurity OR Multi-Industry OR Consumer Packaged Goods OR Consumer Electronics OR Other", 
   "geography": "Global OR US OR EU OR Asia OR Other",
-  "domain": "Cybersecurity & Performance OR Performance & CDN OR Software Solutions OR Consumer Electronics OR Financial Services OR Healthcare OR E-commerce OR Professional Services OR Diversified Conglomerate OR Consumer Products OR Enterprise Software OR Cloud & Infrastructure OR Other"
+  "domain": "Cybersecurity & Performance OR Performance & CDN OR Software Solutions OR Consumer Electronics OR Financial Services OR Healthcare OR E-commerce OR Retail Operations OR Professional Services OR Diversified Conglomerate OR Consumer Products OR Enterprise Software OR Cloud & Infrastructure OR Other"
 }`;
 
   const controller = new AbortController();

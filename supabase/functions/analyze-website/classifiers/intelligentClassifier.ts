@@ -159,7 +159,8 @@ function getMarketForIndustry(industry: string, fullText: string): string {
     case 'Energy':
       return 'Energy & Utilities';
     case 'Retail':
-      return 'E-commerce';
+      if (fullText.includes('ecommerce') || fullText.includes('online only') || fullText.includes('digital marketplace')) return 'E-commerce';
+      return 'Retail & Consumer';
     case 'Conglomerate':
       return 'Multi-Industry';
     default:
@@ -183,7 +184,12 @@ function getDomainForIndustry(industry: string, market: string, fullText: string
   if (industry === 'Financial Services') return 'Financial Services';
   if (industry === 'Automotive') return 'Automotive Technology';
   if (industry === 'Energy') return 'Energy';
-  if (industry === 'Retail') return 'E-commerce';
+  if (industry === 'Retail') {
+    if (fullText.includes('ecommerce') || fullText.includes('online only') || fullText.includes('digital marketplace')) {
+      return 'E-commerce';
+    }
+    return 'Retail Operations';
+  }
   
   return 'Professional Services';
 }
