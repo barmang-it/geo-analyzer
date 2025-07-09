@@ -46,20 +46,20 @@ export const analyzeWebsite = async (
   // Input validation
   if (!validateInput(businessName, websiteUrl)) {
     console.log('Invalid input parameters, falling back to mock analysis');
-    return getMockAnalysis(businessName, websiteUrl, 'Invalid input parameters');
+    return await getMockAnalysis(businessName, websiteUrl, 'Invalid input parameters');
   }
   
   // Check rate limits
   const rateLimitInfo = usageTracker.checkRateLimit(clientIP);
   if (!rateLimitInfo.allowed) {
     console.log('Rate limit exceeded, falling back to mock analysis');
-    return getMockAnalysis(businessName, websiteUrl, 'Rate limit exceeded');
+    return await getMockAnalysis(businessName, websiteUrl, 'Rate limit exceeded');
   }
   
   // Check budget limits
   if (!usageTracker.checkBudgetLimit()) {
     console.log('Daily budget exceeded, falling back to mock analysis');
-    return getMockAnalysis(businessName, websiteUrl, 'Daily budget exceeded');
+    return await getMockAnalysis(businessName, websiteUrl, 'Daily budget exceeded');
   }
   
   // Attempt real analysis using Supabase function
@@ -123,6 +123,6 @@ export const analyzeWebsite = async (
     
   } catch (error) {
     console.error('Real analysis failed, falling back to mock:', error);
-    return getMockAnalysis(businessName, websiteUrl, 'API failure fallback');
+    return await getMockAnalysis(businessName, websiteUrl, 'API failure fallback');
   }
 }

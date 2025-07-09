@@ -4,11 +4,11 @@ import { generateTestPrompts } from '../classification/promptGenerator';
 import { calculateGeoScore } from '../classification/scoreCalculator';
 import { generateDynamicStrengthsAndGaps, generateDynamicRecommendations } from './dynamicAnalysis';
 
-export const getMockAnalysis = (businessName: string, websiteUrl: string, reason?: string): AnalysisResult => {
+export const getMockAnalysis = async (businessName: string, websiteUrl: string, reason?: string): Promise<AnalysisResult> => {
   console.log(`Generating mock analysis for ${businessName} (${reason || 'fallback'})`);
   
   const classification = performBusinessClassification(businessName, websiteUrl);
-  const testPrompts = generateTestPrompts(classification, businessName);
+  const testPrompts = await generateTestPrompts(classification, businessName);
   const { geoScore, benchmarkScore } = calculateGeoScore(classification, businessName, testPrompts);
   
   // Generate realistic public presence based on company
