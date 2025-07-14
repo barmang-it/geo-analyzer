@@ -3,13 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowDown, Search, CheckCircle, Target, TrendingUp } from "lucide-react";
+import { ArrowDown, Search, CheckCircle, Target, TrendingUp, LogIn, UserPlus } from "lucide-react";
 import { ScanForm } from "@/components/ScanForm";
 import { ProcessingView } from "@/components/ProcessingView";
 import { ResultsView } from "@/components/ResultsView";
 import { CostMonitor } from "@/components/CostMonitor";
+import { AuthForm } from "@/components/AuthForm";
 import { UsageTracker } from "@/services/usageTracking";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   analyzeWebsite, 
   generateDynamicStrengthsAndGaps, 
@@ -43,6 +45,8 @@ const Index = () => {
   const [scanData, setScanData] = useState<ScanData | null>(null);
   const [results, setResults] = useState<ScanResults | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showAuth, setShowAuth] = useState(false);
+  const { user, logout } = useAuth();
 
   const handleScanStart = async (data: ScanData) => {
     setScanData(data);
@@ -148,6 +152,46 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Navigation */}
+      <nav className="container mx-auto px-4 py-4">
+        <div className="flex justify-between items-center">
+          <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2">
+            CiteMe.AI
+          </Badge>
+          
+          <div className="flex items-center gap-4">
+            {user ? (
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600">Welcome, {user.email}</span>
+                <Button variant="outline" size="sm" onClick={logout}>
+                  Sign Out
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowAuth(true)}
+                  className="flex items-center gap-2"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Sign In
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={() => setShowAuth(true)}
+                  className="flex items-center gap-2"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Sign Up
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         {/* Cost Monitor */}
@@ -156,9 +200,6 @@ const Index = () => {
         </div>
 
         <div className="text-center max-w-4xl mx-auto mb-16">
-          <Badge className="mb-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2">
-            CiteMe.AI
-          </Badge>
           
           <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
             GEO is the new SEO
@@ -208,9 +249,24 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* Scan Form */}
+        {/* Auth Form or Scan Form */}
         <div className="max-w-2xl mx-auto">
-          <ScanForm onScanStart={handleScanStart} />
+          {showAuth ? (
+            <div className="space-y-4">
+              <AuthForm />
+              <div className="text-center">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setShowAuth(false)}
+                  className="text-sm"
+                >
+                  ← Back to analysis
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <ScanForm onScanStart={handleScanStart} />
+          )}
         </div>
 
         {/* Trust Indicators */}
