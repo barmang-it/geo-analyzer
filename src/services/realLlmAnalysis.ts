@@ -28,7 +28,13 @@ const validateInput = (businessName: string, websiteUrl: string): boolean => {
 };
 
 const sanitizeInput = (input: string): string => {
-  return input.trim().replace(/[<>'"]/g, '');
+  // Comprehensive input sanitization
+  return input
+    .trim()
+    .replace(/[<>'"]/g, '') // Remove potential XSS characters
+    .replace(/[\r\n\t]/g, ' ') // Replace line breaks and tabs with spaces
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .substring(0, 500); // Limit length to prevent DoS
 };
 
 export const analyzeWebsite = async (

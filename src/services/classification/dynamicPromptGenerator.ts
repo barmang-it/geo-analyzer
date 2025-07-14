@@ -1,4 +1,5 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import { BusinessClassification, TestPrompt } from './types';
 
 export const generateDynamicTestPrompts = async (
@@ -9,23 +10,19 @@ export const generateDynamicTestPrompts = async (
   
   try {
     // Use the existing Supabase function to generate prompts via ChatGPT
-    const response = await fetch('https://cxeyudjaehsmtmqnzklk.supabase.co/functions/v1/generate-test-prompts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4ZXl1ZGphZWhzbXRtcW56a2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwNDA1OTUsImV4cCI6MjA2NjYxNjU5NX0.kH-nWJME9-UYvINUvPcO9DyWjVu9gVZQgc3ZxyNyPWY`
-      },
-      body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke('generate-test-prompts', {
+      body: {
         classification,
         businessName
-      })
+      }
     });
     
-    if (response.ok) {
-      const data = await response.json();
-      if (data.prompts && Array.isArray(data.prompts)) {
-        return data.prompts;
-      }
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    if (data?.prompts && Array.isArray(data.prompts)) {
+      return data.prompts;
     }
   } catch (error) {
     console.log('Dynamic prompt generation failed, using fallback prompts:', error);
