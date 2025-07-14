@@ -44,31 +44,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        // Only synchronous state updates here to prevent deadlocks
+        setUser(session?.user ?? null);
+        setLoading(false);
+        
+        // Defer async operations with setTimeout to prevent race conditions
+        if (session?.user) {
+          setTimeout(() => {
+            checkAdminStatus(session.user.id).then(setIsAdmin);
+          }, 0);
+        } else {
+          setIsAdmin(false);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        const adminStatus = await checkAdminStatus(session.user.id);
-        setIsAdmin(adminStatus);
+        setTimeout(() => {
+          checkAdminStatus(session.user.id).then(setIsAdmin);
+        }, 0);
       } else {
         setIsAdmin(false);
       }
       setLoading(false);
     });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          const adminStatus = await checkAdminStatus(session.user.id);
-          setIsAdmin(adminStatus);
-        } else {
-          setIsAdmin(false);
-        }
-        setLoading(false);
-      }
-    );
 
     return () => subscription.unsubscribe();
   }, []);
