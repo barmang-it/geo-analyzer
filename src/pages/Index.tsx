@@ -11,7 +11,7 @@ import { CostMonitor } from "@/components/CostMonitor";
 import { AuthForm } from "@/components/AuthForm";
 import { UsageTracker } from "@/services/usageTracking";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useSecureAuth } from "@/hooks/useSecureAuth";
 import { 
   analyzeWebsite, 
   generateDynamicStrengthsAndGaps, 
@@ -46,7 +46,7 @@ const Index = () => {
   const [results, setResults] = useState<ScanResults | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout } = useSecureAuth();
 
   const handleScanStart = async (data: ScanData) => {
     setScanData(data);
