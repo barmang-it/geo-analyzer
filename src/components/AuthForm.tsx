@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, EyeOff, Loader2, Mail, Lock } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useSecureAuth } from '@/hooks/useSecureAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { validateEmail, validatePassword, sanitizeInput, isRateLimited, logSecurityEvent } from '@/utils/security';
 
@@ -17,7 +17,7 @@ export const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const { login } = useAuth();
+  const { login, signup } = useSecureAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,9 +47,9 @@ export const AuthForm = () => {
     }
     
     try {
-      const success = await login(sanitizedEmail, password);
-      if (!success) {
-        setError('Invalid email or password');
+      const result = await login(sanitizedEmail, password);
+      if (!result.success) {
+        setError(result.error || 'Invalid email or password');
         logSecurityEvent('failed_login', { email: sanitizedEmail });
       } else {
         logSecurityEvent('successful_login', { email: sanitizedEmail });
@@ -98,21 +98,10 @@ export const AuthForm = () => {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email: sanitizedEmail,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) {
-        if (error.message.includes('already registered')) {
-          setError('This email is already registered. Please sign in instead.');
-        } else {
-          setError(error.message);
-        }
-        logSecurityEvent('failed_signup', { email: sanitizedEmail, error: error.message });
+      const result = await signup(sanitizedEmail, password);
+      if (!result.success) {
+        setError(result.error || 'Sign up failed. Please try again.');
+        logSecurityEvent('failed_signup', { email: sanitizedEmail, error: result.error });
       } else {
         setSuccess('Check your email for the confirmation link!');
         logSecurityEvent('successful_signup', { email: sanitizedEmail });

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Shield, AlertTriangle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useSecureAuth } from '@/hooks/useSecureAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -20,7 +20,7 @@ interface SecurityAudit {
 }
 
 export const SecurityMonitor = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin } = useSecureAuth();
   const [auditData, setAuditData] = useState<SecurityAudit | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [securityLogs, setSecurityLogs] = useState<any[]>([]);

@@ -6,11 +6,11 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Shield, TrendingUp, LogOut } from 'lucide-react';
 import { UsageTracker } from '@/services/usageTracking';
-import { useAuth } from '@/hooks/useAuth';
+import { useSecureAuth } from '@/hooks/useSecureAuth';
 import { AdminLogin } from './AdminLogin';
 
 export const CostMonitor = () => {
-  const { isAdmin, logout } = useAuth();
+  const { isAdmin, logout } = useSecureAuth();
   const [usageInfo, setUsageInfo] = useState(UsageTracker.getInstance().getUsageInfo());
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
