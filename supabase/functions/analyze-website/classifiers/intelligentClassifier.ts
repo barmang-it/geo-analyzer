@@ -41,6 +41,23 @@ export function performIntelligentClassification(
 }
 
 function extractGeographyIntelligently(fullText: string): string {
+  // Major global companies - explicit list
+  const majorGlobalCompanies = [
+    'microsoft', 'apple', 'google', 'amazon', 'meta', 'facebook', 'tesla', 'netflix',
+    'adobe', 'salesforce', 'oracle', 'ibm', 'intel', 'nvidia', 'cisco', 'vmware',
+    'uber', 'airbnb', 'spotify', 'zoom', 'slack', 'dropbox', 'atlassian', 'shopify',
+    'paypal', 'stripe', 'square', 'twilio', 'datadog', 'snowflake', 'palantir',
+    'coca-cola', 'pepsi', 'mcdonalds', 'starbucks', 'nike', 'adidas', 'walmart',
+    'visa', 'mastercard', 'american express', 'jp morgan', 'goldman sachs',
+    'exxon', 'chevron', 'shell', 'bp', 'total', 'toyota', 'volkswagen', 'ford',
+    'general motors', 'bmw', 'mercedes', 'audi', 'ferrari', 'porsche'
+  ];
+  
+  // Check if it's a major global company
+  if (majorGlobalCompanies.some(company => fullText.includes(company))) {
+    return 'Global';
+  }
+  
   // Global indicators - strong signals
   const globalIndicators = [
     'international', 'worldwide', 'global', 'multinational',
@@ -144,6 +161,17 @@ function analyzeIndustry(fullText: string): { industry: string; confidence: numb
 function getMarketForIndustry(industry: string, fullText: string): string {
   switch (industry) {
     case 'Technology':
+      // Major enterprise software companies
+      const enterpriseCompanies = [
+        'microsoft', 'oracle', 'salesforce', 'adobe', 'sap', 'ibm', 'vmware',
+        'servicenow', 'workday', 'tableau', 'splunk', 'atlassian', 'slack',
+        'zoom', 'docusign', 'hubspot', 'zendesk', 'twilio', 'okta'
+      ];
+      
+      if (enterpriseCompanies.some(company => fullText.includes(company))) {
+        return 'Enterprise Software';
+      }
+      
       if (fullText.includes('enterprise') || fullText.includes('b2b')) return 'Enterprise Software';
       if (fullText.includes('consumer') || fullText.includes('mobile')) return 'Consumer Electronics';
       if (fullText.includes('cloud') || fullText.includes('infrastructure')) return 'Cloud Infrastructure';
@@ -170,6 +198,17 @@ function getMarketForIndustry(industry: string, fullText: string): string {
 
 function getDomainForIndustry(industry: string, market: string, fullText: string): string {
   if (industry === 'Technology') {
+    // Major enterprise software companies
+    const enterpriseCompanies = [
+      'microsoft', 'oracle', 'salesforce', 'adobe', 'sap', 'ibm', 'vmware',
+      'servicenow', 'workday', 'tableau', 'splunk', 'atlassian', 'slack',
+      'zoom', 'docusign', 'hubspot', 'zendesk', 'twilio', 'okta'
+    ];
+    
+    if (enterpriseCompanies.some(company => fullText.includes(company))) {
+      return 'Enterprise Software';
+    }
+    
     if (fullText.includes('security') || fullText.includes('cyber')) return 'Cybersecurity & Performance';
     if (fullText.includes('performance') || fullText.includes('cdn')) return 'Performance & CDN';
     if (market === 'Enterprise Software') return 'Enterprise Software';
