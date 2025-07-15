@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, EyeOff, Loader2, Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { validateEmail, validatePassword, sanitizeInput, isRateLimited, logSecurityEvent } from '@/utils/security';
 
 export const AuthForm = () => {
   const [email, setEmail] = useState('');
@@ -23,13 +24,39 @@ export const AuthForm = () => {
     setIsLoading(true);
     setError('');
     
+    // Rate limiting check
+    if (isRateLimited('login', 5, 15 * 60 * 1000)) { // 5 attempts per 15 minutes
+      setError('Too many login attempts. Please try again later.');
+      logSecurityEvent('rate_limit_exceeded', { action: 'login', email: sanitizeInput(email) });
+      setIsLoading(false);
+      return;
+    }
+    
+    // Input validation
+    const sanitizedEmail = sanitizeInput(email);
+    if (!validateEmail(sanitizedEmail)) {
+      setError('Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
+    
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setIsLoading(false);
+      return;
+    }
+    
     try {
-      const success = await login(email, password);
+      const success = await login(sanitizedEmail, password);
       if (!success) {
         setError('Invalid email or password');
+        logSecurityEvent('failed_login', { email: sanitizedEmail });
+      } else {
+        logSecurityEvent('successful_login', { email: sanitizedEmail });
       }
     } catch (error) {
       setError('Login failed. Please try again.');
+      logSecurityEvent('login_error', { email: sanitizedEmail, error: String(error) });
     } finally {
       setIsLoading(false);
     }
@@ -41,21 +68,38 @@ export const AuthForm = () => {
     setError('');
     setSuccess('');
 
+    // Rate limiting check
+    if (isRateLimited('signup', 3, 60 * 60 * 1000)) { // 3 attempts per hour
+      setError('Too many signup attempts. Please try again later.');
+      logSecurityEvent('rate_limit_exceeded', { action: 'signup', email: sanitizeInput(email) });
+      setIsLoading(false);
+      return;
+    }
+
+    // Input validation
+    const sanitizedEmail = sanitizeInput(email);
+    if (!validateEmail(sanitizedEmail)) {
+      setError('Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
+
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      setError(passwordValidation.message || 'Invalid password');
+      setIsLoading(false);
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       setIsLoading(false);
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const { error } = await supabase.auth.signUp({
-        email,
+        email: sanitizedEmail,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/`
@@ -68,14 +112,17 @@ export const AuthForm = () => {
         } else {
           setError(error.message);
         }
+        logSecurityEvent('failed_signup', { email: sanitizedEmail, error: error.message });
       } else {
         setSuccess('Check your email for the confirmation link!');
+        logSecurityEvent('successful_signup', { email: sanitizedEmail });
         setEmail('');
         setPassword('');
         setConfirmPassword('');
       }
     } catch (error) {
       setError('Sign up failed. Please try again.');
+      logSecurityEvent('signup_error', { email: sanitizedEmail, error: String(error) });
     } finally {
       setIsLoading(false);
     }
@@ -183,8 +230,9 @@ export const AuthForm = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 pr-10"
-                    required
-                    minLength={6}
+                     required
+                     minLength={8}
+                     maxLength={128}
                   />
                   <Button
                     type="button"
@@ -209,8 +257,9 @@ export const AuthForm = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="pl-10"
-                    required
-                    minLength={6}
+                     required
+                     minLength={8}
+                     maxLength={128}
                   />
                 </div>
               </div>

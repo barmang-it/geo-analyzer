@@ -5,8 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { AlertTriangle, Users, Shield, Plus } from 'lucide-react';
+import { SecurityMonitor } from './SecurityMonitor';
+import { validateEmail, sanitizeInput, logSecurityEvent } from '@/utils/security';
 
 interface UserRole {
   id: string;
@@ -63,8 +66,15 @@ export const AdminPanel: React.FC = () => {
   };
 
   const addUserRole = async () => {
-    if (!newUserEmail.trim()) {
+    const sanitizedEmail = sanitizeInput(newUserEmail);
+    
+    if (!sanitizedEmail.trim()) {
       toast.error('Please enter a user email');
+      return;
+    }
+
+    if (!validateEmail(sanitizedEmail)) {
+      toast.error('Please enter a valid email address');
       return;
     }
 
@@ -74,11 +84,20 @@ export const AdminPanel: React.FC = () => {
       // For demo purposes, showing the structure
       toast.info('User role management requires user lookup by email - implement via edge function');
       
+      logSecurityEvent('admin_add_user_role', {
+        targetEmail: sanitizedEmail,
+        role: newUserRole
+      });
+      
       setNewUserEmail('');
       setNewUserRole('user');
     } catch (error) {
       console.error('Error adding user role:', error);
       toast.error('Failed to add user role');
+      logSecurityEvent('admin_add_user_role_failed', {
+        targetEmail: sanitizedEmail,
+        error: String(error)
+      });
     } finally {
       setIsLoading(false);
     }
@@ -93,10 +112,18 @@ export const AdminPanel: React.FC = () => {
       if (error) throw error;
       
       toast.success(`User role updated to ${newRole}`);
+      logSecurityEvent('admin_update_user_role', {
+        targetUserId: userId,
+        newRole
+      });
       fetchUserRoles();
     } catch (error) {
       console.error('Error updating user role:', error);
       toast.error('Failed to update user role');
+      logSecurityEvent('admin_update_user_role_failed', {
+        targetUserId: userId,
+        error: String(error)
+      });
     }
   };
 
@@ -110,10 +137,17 @@ export const AdminPanel: React.FC = () => {
       if (error) throw error;
       
       toast.success('User role removed');
+      logSecurityEvent('admin_remove_user_role', {
+        roleId
+      });
       fetchUserRoles();
     } catch (error) {
       console.error('Error removing user role:', error);
       toast.error('Failed to remove user role');
+      logSecurityEvent('admin_remove_user_role_failed', {
+        roleId,
+        error: String(error)
+      });
     }
   };
 
@@ -144,8 +178,15 @@ export const AdminPanel: React.FC = () => {
         <h1 className="text-2xl font-bold">Admin Panel</h1>
       </div>
 
-      {/* Add New User Role */}
-      <Card>
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="users">User Management</TabsTrigger>
+          <TabsTrigger value="security">Security Monitor</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="users" className="space-y-6">
+          {/* Add New User Role */}
+          <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
@@ -229,8 +270,14 @@ export const AdminPanel: React.FC = () => {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+          </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="security">
+          <SecurityMonitor />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
