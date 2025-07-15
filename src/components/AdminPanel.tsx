@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useSecureAuth } from '@/hooks/useSecureAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { AlertTriangle, Users, Shield, Plus } from 'lucide-react';
-import { SecurityMonitor } from './SecurityMonitor';
+import { EnhancedSecurityMonitor } from './EnhancedSecurityMonitor';
 import { validateEmail, sanitizeInput, logSecurityEvent } from '@/utils/security';
 
 interface UserRole {
@@ -25,7 +25,7 @@ interface User {
 }
 
 export const AdminPanel: React.FC = () => {
-  const { isAdmin, loading } = useAuth();
+  const { isAdmin, loading } = useSecureAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [newUserEmail, setNewUserEmail] = useState('');
@@ -275,7 +275,7 @@ export const AdminPanel: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="security">
-          <SecurityMonitor />
+          <EnhancedSecurityMonitor />
         </TabsContent>
       </Tabs>
     </div>

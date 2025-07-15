@@ -40,26 +40,12 @@ export const isRateLimited = (key: string, limit: number, windowMs: number): boo
   return false;
 };
 
-export const logSecurityEvent = (event: string, details: Record<string, any>) => {
-  const securityLog = {
-    timestamp: new Date().toISOString(),
-    event,
-    details,
-    userAgent: navigator.userAgent,
-    url: window.location.href
-  };
+export const logSecurityEvent = async (event: string, details: Record<string, any>) => {
+  // Import SecurityService dynamically to avoid circular dependencies
+  const { SecurityService } = await import('@/services/securityService');
   
-  // In a real application, this would send to a logging service
-  console.warn('Security Event:', securityLog);
-  
-  // Store locally for admin review
-  const existingLogs = JSON.parse(localStorage.getItem('security_logs') || '[]');
-  existingLogs.push(securityLog);
-  
-  // Keep only last 100 logs
-  if (existingLogs.length > 100) {
-    existingLogs.splice(0, existingLogs.length - 100);
-  }
-  
-  localStorage.setItem('security_logs', JSON.stringify(existingLogs));
+  await SecurityService.logSecurityEvent({
+    event_type: event,
+    event_data: details
+  });
 };
