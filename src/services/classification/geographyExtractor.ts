@@ -2,6 +2,23 @@
 export const extractGeographyHints = (businessName: string, websiteUrl: string, websiteContent?: string): string => {
   const text = `${businessName} ${websiteUrl} ${websiteContent || ''}`.toLowerCase();
   
+  // Major global companies - explicit list
+  const majorGlobalCompanies = [
+    'microsoft', 'apple', 'google', 'amazon', 'meta', 'facebook', 'tesla', 'netflix',
+    'adobe', 'salesforce', 'oracle', 'ibm', 'intel', 'nvidia', 'cisco', 'vmware',
+    'uber', 'airbnb', 'spotify', 'zoom', 'slack', 'dropbox', 'atlassian', 'shopify',
+    'paypal', 'stripe', 'square', 'twilio', 'datadog', 'snowflake', 'palantir',
+    'coca-cola', 'pepsi', 'mcdonalds', 'starbucks', 'nike', 'adidas', 'walmart',
+    'visa', 'mastercard', 'american express', 'jp morgan', 'goldman sachs',
+    'exxon', 'chevron', 'shell', 'bp', 'total', 'toyota', 'volkswagen', 'ford',
+    'general motors', 'bmw', 'mercedes', 'audi', 'ferrari', 'porsche'
+  ];
+  
+  // Check if it's a major global company
+  if (majorGlobalCompanies.some(company => text.includes(company))) {
+    return 'Global';
+  }
+  
   // Global indicators - strong signals
   const globalIndicators = [
     'international', 'worldwide', 'global', 'multinational',
@@ -19,7 +36,7 @@ export const extractGeographyHints = (businessName: string, websiteUrl: string, 
     'Global': ['fortune', 'nasdaq', 'nyse', 'ftse', 'dax', 'public company', 'publicly traded']
   };
   
-  // Check for global indicators first
+  // Check for global indicators
   if (globalIndicators.some(indicator => text.includes(indicator))) {
     return 'Global';
   }

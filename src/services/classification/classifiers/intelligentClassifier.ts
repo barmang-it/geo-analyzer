@@ -66,6 +66,17 @@ export const performIntelligentClassification = (
   const getMarket = (industry: string): string => {
     switch (industry) {
       case 'Technology':
+        // Major enterprise software companies
+        const enterpriseCompanies = [
+          'microsoft', 'oracle', 'salesforce', 'adobe', 'sap', 'ibm', 'vmware',
+          'servicenow', 'workday', 'tableau', 'splunk', 'atlassian', 'slack',
+          'zoom', 'docusign', 'hubspot', 'zendesk', 'twilio', 'okta'
+        ];
+        
+        if (enterpriseCompanies.some(company => fullText.includes(company))) {
+          return 'Enterprise Software';
+        }
+        
         if (fullText.includes('enterprise') || fullText.includes('b2b')) return 'Enterprise Software';
         if (fullText.includes('consumer') || fullText.includes('mobile')) return 'Consumer Electronics';
         if (fullText.includes('cloud') || fullText.includes('infrastructure')) return 'Cloud Infrastructure';
@@ -114,6 +125,17 @@ export const performIntelligentClassification = (
   // Domain classification
   const getDomain = (industry: string, market: string): string => {
     if (industry === 'Technology') {
+      // Major enterprise software companies
+      const enterpriseCompanies = [
+        'microsoft', 'oracle', 'salesforce', 'adobe', 'sap', 'ibm', 'vmware',
+        'servicenow', 'workday', 'tableau', 'splunk', 'atlassian', 'slack',
+        'zoom', 'docusign', 'hubspot', 'zendesk', 'twilio', 'okta'
+      ];
+      
+      if (enterpriseCompanies.some(company => fullText.includes(company))) {
+        return 'Enterprise Software';
+      }
+      
       if (fullText.includes('security') || fullText.includes('cyber')) return 'Cybersecurity & Performance';
       if (fullText.includes('performance') || fullText.includes('cdn')) return 'Performance & CDN';
       if (market === 'Enterprise Software') return 'Enterprise Software';
