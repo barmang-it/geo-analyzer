@@ -11,14 +11,12 @@ export const generateDynamicStrengthsAndGaps = (
   const strengths: string[] = []
   const gaps: string[] = []
   
-  // Calculate mentions consistently - check for various mention indicators
+  // Calculate mentions correctly - backend returns "not mentioned" when not found
   const actualMentions = testPrompts.filter(prompt => {
     if (!prompt.response) return false;
     const response = prompt.response.toLowerCase();
-    return response.includes('mentioned') || 
-           response.includes('found') || 
-           response === 'mentioned' ||
-           response.includes('mention');
+    // A mention is found if response contains "mentioned" but NOT "not mentioned"
+    return response.includes('mentioned') && !response.includes('not mentioned');
   }).length;
   
   const mentionRate = testPrompts.length > 0 ? actualMentions / testPrompts.length : 0;
@@ -80,14 +78,12 @@ export const generateDynamicRecommendations = (
 ) => {
   const recommendations: string[] = []
   
-  // Calculate mentions consistently
+  // Calculate mentions correctly - backend returns "not mentioned" when not found
   const actualMentions = testPrompts.filter(prompt => {
     if (!prompt.response) return false;
     const response = prompt.response.toLowerCase();
-    return response.includes('mentioned') || 
-           response.includes('found') || 
-           response === 'mentioned' ||
-           response.includes('mention');
+    // A mention is found if response contains "mentioned" but NOT "not mentioned"
+    return response.includes('mentioned') && !response.includes('not mentioned');
   }).length;
   
   const mentionRate = testPrompts.length > 0 ? actualMentions / testPrompts.length : 0;

@@ -25,7 +25,7 @@ export function calculateScores(
   content: WebsiteContent
 ): { geoScore: number; benchmarkScore: number } {
   // Calculate mentions from test prompts - this should be the primary factor
-  const mentionCount = promptResults.filter(p => p.response && p.response.includes('mentioned')).length
+  const mentionCount = promptResults.filter(p => p.response && p.response.includes('mentioned') && !p.response.includes('not mentioned')).length
   const mentionRate = promptResults.length > 0 ? mentionCount / promptResults.length : 0;
   
   // Base score should primarily depend on mention rate

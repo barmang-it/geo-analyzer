@@ -92,10 +92,8 @@ export const analyzeWebsite = async (
       const actualMentions = data.testPrompts.filter((prompt: any) => {
         if (!prompt.response) return false;
         const response = prompt.response.toLowerCase();
-        return response.includes('mentioned') || 
-               response.includes('found') || 
-               response === 'mentioned' ||
-               response.includes('mention');
+        // A mention is found if response contains "mentioned" but NOT "not mentioned"
+        return response.includes('mentioned') && !response.includes('not mentioned');
       }).length;
       
       // Update strengths and gaps with consistent mention counting
