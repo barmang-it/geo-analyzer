@@ -29,9 +29,9 @@ export interface AnalysisResult {
   benchmarkScore: number;
   hasStructuredData: boolean;
   llmMentions: number;
-  publicPresence?: string[];
-  strengths?: string[];
-  gaps?: string[];
-  recommendations?: string[];
+  publicPresence: string[];
+  strengths: string[];
+  gaps: string[];
+  recommendations: string[];
   timestamp?: string;
 }

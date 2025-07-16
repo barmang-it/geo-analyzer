@@ -19,7 +19,31 @@ export const validatePassword = (password: string): { isValid: boolean; message?
 };
 
 export const sanitizeInput = (input: string): string => {
-  return input.trim().replace(/[<>]/g, '');
+  return input
+    .trim()
+    .replace(/[<>'"]/g, '') // Remove potential XSS characters
+    .replace(/[\r\n\t]/g, ' ') // Replace line breaks and tabs with spaces
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .substring(0, 500); // Limit length to prevent DoS
+};
+
+export const validateInput = (businessName: string, websiteUrl: string): boolean => {
+  // Basic input validation
+  if (!businessName?.trim() || businessName.trim().length < 2) {
+    return false;
+  }
+  
+  if (!websiteUrl?.trim()) {
+    return false;
+  }
+  
+  // Basic URL validation
+  try {
+    const url = new URL(websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
 };
 
 export const isRateLimited = (key: string, limit: number, windowMs: number): boolean => {

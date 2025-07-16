@@ -1,11 +1,21 @@
-import { BusinessClassification, TestPrompt } from '../classification/types';
+interface BusinessClassification {
+  industry: string;
+  market: string;
+  geography: string;
+  domain: string;
+}
+
+interface TestPrompt {
+  type: string;
+  prompt: string;
+  response?: string;
+}
 
 export const generateDynamicStrengthsAndGaps = (
   classification: BusinessClassification,
   testPrompts: TestPrompt[],
   geoScore: number,
-  hasStructuredData: boolean,
-  llmMentions?: number
+  hasStructuredData: boolean
 ): { strengths: string[]; gaps: string[] } => {
   const strengths: string[] = []
   const gaps: string[] = []
@@ -81,8 +91,7 @@ export const generateDynamicRecommendations = (
   classification: BusinessClassification,
   testPrompts: TestPrompt[],
   geoScore: number,
-  hasStructuredData: boolean,
-  llmMentions?: number
+  hasStructuredData: boolean
 ): string[] => {
   const recommendations: string[] = []
   

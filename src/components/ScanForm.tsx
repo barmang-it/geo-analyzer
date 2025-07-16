@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Search } from "lucide-react";
 import { ScanData } from "@/pages/Index";
+import { sanitizeInput } from "@/utils/security";
 
 interface ScanFormProps {
   onScanStart: (data: ScanData) => void;
@@ -29,9 +30,7 @@ const validateUrl = (url: string): boolean => {
   }
 };
 
-const sanitizeInput = (input: string): string => {
-  return input.trim().replace(/[<>'"]/g, '');
-};
+// Input sanitization now handled by shared utils
 
 export const ScanForm = ({ onScanStart }: ScanFormProps) => {
   const [businessName, setBusinessName] = useState("");

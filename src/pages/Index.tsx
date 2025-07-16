@@ -13,9 +13,7 @@ import { UsageTracker } from "@/services/usageTracking";
 import { supabase } from "@/integrations/supabase/client";
 import { useSecureAuth } from "@/hooks/useSecureAuth";
 import { 
-  analyzeWebsite, 
-  generateDynamicStrengthsAndGaps, 
-  generateDynamicRecommendations,
+  analyzeWebsite,
   type BusinessClassification,
   type TestPrompt
 } from "@/services/realLlmAnalysis";
@@ -69,37 +67,8 @@ const Index = () => {
       
       console.log('Analysis result:', analysisResult);
       
-      // Generate dynamic strengths, gaps, and recommendations
-      const { strengths, gaps } = generateDynamicStrengthsAndGaps(
-        analysisResult.classification,
-        analysisResult.testPrompts,
-        analysisResult.geoScore,
-        analysisResult.hasStructuredData,
-        analysisResult.llmMentions
-      );
-      
-      const recommendations = generateDynamicRecommendations(
-        analysisResult.classification,
-        analysisResult.testPrompts,
-        analysisResult.geoScore,
-        analysisResult.hasStructuredData,
-        analysisResult.llmMentions
-      );
-      
-      const finalResults: ScanResults = {
-        geoScore: analysisResult.geoScore,
-        benchmarkScore: analysisResult.benchmarkScore,
-        strengths,
-        gaps,
-        recommendations,
-        llmMentions: analysisResult.llmMentions,
-        hasStructuredData: analysisResult.hasStructuredData,
-        publicPresence: analysisResult.publicPresence || [],
-        classification: analysisResult.classification,
-        testPrompts: analysisResult.testPrompts
-      };
-      
-      setResults(finalResults);
+      // Backend now provides all analysis data including strengths, gaps, and recommendations
+      setResults(analysisResult);
       setScanStatus('completed');
       
     } catch (error) {

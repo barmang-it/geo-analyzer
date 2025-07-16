@@ -1,41 +1,13 @@
 
 import { UsageTracker } from './usageTracking';
 import { getMockAnalysis } from './analysis/mockAnalysis';
-import { generateDynamicStrengthsAndGaps, generateDynamicRecommendations } from './analysis/dynamicAnalysis';
 import { supabase } from '@/integrations/supabase/client';
+import { validateInput, sanitizeInput } from '@/utils/security';
 
 // Re-export types for backward compatibility
 export type { AnalysisResult, BusinessClassification, TestPrompt } from './classification/types';
-export { generateDynamicStrengthsAndGaps, generateDynamicRecommendations };
 
-const validateInput = (businessName: string, websiteUrl: string): boolean => {
-  // Basic input validation
-  if (!businessName?.trim() || businessName.trim().length < 2) {
-    return false;
-  }
-  
-  if (!websiteUrl?.trim()) {
-    return false;
-  }
-  
-  // Basic URL validation
-  try {
-    const url = new URL(websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`);
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch {
-    return false;
-  }
-};
-
-const sanitizeInput = (input: string): string => {
-  // Comprehensive input sanitization
-  return input
-    .trim()
-    .replace(/[<>'"]/g, '') // Remove potential XSS characters
-    .replace(/[\r\n\t]/g, ' ') // Replace line breaks and tabs with spaces
-    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-    .substring(0, 500); // Limit length to prevent DoS
-};
+// Input validation and sanitization now handled by shared utils
 
 export const analyzeWebsite = async (
   businessName: string, 
@@ -87,37 +59,7 @@ export const analyzeWebsite = async (
       throw new Error('No data returned from analysis');
     }
     
-    // Ensure consistent mention counting in returned data
-    if (data.testPrompts) {
-      const actualMentions = data.testPrompts.filter((prompt: any) => {
-        if (!prompt.response) return false;
-        const response = prompt.response.toLowerCase();
-        // A mention is found if response contains "mentioned" but NOT "not mentioned"
-        return response.includes('mentioned') && !response.includes('not mentioned');
-      }).length;
-      
-      // Update strengths and gaps with consistent mention counting
-      data.strengths = generateDynamicStrengthsAndGaps(
-        data.classification,
-        data.testPrompts,
-        data.geoScore,
-        data.hasStructuredData
-      ).strengths;
-      
-      data.gaps = generateDynamicStrengthsAndGaps(
-        data.classification,
-        data.testPrompts,
-        data.geoScore,
-        data.hasStructuredData
-      ).gaps;
-      
-      data.recommendations = generateDynamicRecommendations(
-        data.classification,
-        data.testPrompts,
-        data.geoScore,
-        data.hasStructuredData
-      );
-    }
+    // Backend now handles all analysis generation, no need for frontend processing
     
     // Record successful scan
     usageTracker.recordScan(clientIP);

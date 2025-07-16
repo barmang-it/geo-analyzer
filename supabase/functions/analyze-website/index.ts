@@ -6,6 +6,7 @@ import { testPromptsInParallel } from './promptTester.ts';
 import { calculateScores } from './scoreCalculator.ts';
 import { extractWebsiteContent } from './websiteExtractor.ts';
 import { detectPublicPresence } from './publicPresenceDetector.ts';
+import { generateDynamicStrengthsAndGaps, generateDynamicRecommendations } from './dynamicAnalysis.ts';
 
 // Input validation
 const validateInput = (businessName: string, websiteUrl: string): boolean => {
@@ -139,12 +140,27 @@ serve(async (req) => {
       publicPresenceResult = { platforms: [], totalFound: 0 };
     }
     
-    // Calculate scores using the correct function name
+    // Calculate scores and generate all analysis content
     const llmMentions = testPrompts.filter(p => p.response === 'mentioned').length;
     const { geoScore, benchmarkScore } = calculateScores(
       classification, 
       testPrompts, 
       websiteContent || { title: '', description: '', content: '', hasStructuredData: false }
+    );
+    
+    // Generate strengths, gaps, and recommendations
+    const { strengths, gaps } = generateDynamicStrengthsAndGaps(
+      classification,
+      testPrompts,
+      geoScore,
+      websiteContent?.hasStructuredData || false
+    );
+    
+    const recommendations = generateDynamicRecommendations(
+      classification,
+      testPrompts,
+      geoScore,
+      websiteContent?.hasStructuredData || false
     );
     
     const result = {
@@ -157,6 +173,9 @@ serve(async (req) => {
       llmMentions,
       hasStructuredData: websiteContent?.hasStructuredData || false,
       publicPresence: publicPresenceResult.platforms,
+      strengths,
+      gaps,
+      recommendations,
       timestamp: new Date().toISOString()
     };
     
