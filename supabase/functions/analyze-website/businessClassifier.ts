@@ -61,11 +61,13 @@ CRITICAL GEOGRAPHY CLASSIFICATION:
 - Look for subsidiary offices, international operations, or global customer base
 
 INDUSTRY CLASSIFICATION RULES:
-1. Analyze the actual business content and services offered
-2. Don't rely solely on company names - analyze what they actually do
-3. For conglomerates, identify their main business areas
-4. Technology companies should be properly subcategorized (enterprise software, consumer electronics, cloud infrastructure, etc.)
-5. RETAIL vs E-COMMERCE: Traditional retailers (brick-and-mortar stores, physical presence) should be "Retail" with "Retail & Consumer" market, while online-only businesses should be "E-commerce"
+1. Analyze the PRIMARY business model and core products/services offered
+2. Focus on what the company ACTUALLY sells or provides as their main revenue source
+3. Don't classify based on distribution channel alone - focus on the core business
+4. For convenience stores, food retailers, beverage companies: classify as "Food & Beverage" regardless of having physical locations
+5. "Retail" should be for general merchandise retailers, department stores, clothing retailers
+6. Technology companies should be properly subcategorized (enterprise software, consumer electronics, cloud infrastructure, etc.)
+7. E-COMMERCE vs RETAIL: Online-only businesses should be "E-commerce", but focus on what they sell, not just the channel
 
 Return JSON only:
 {
