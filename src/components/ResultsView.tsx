@@ -85,7 +85,7 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
 
   // Calculate actual mentions from test prompts for consistency
   const actualMentions = results.testPrompts.filter(prompt => 
-    prompt.response?.includes('Mentioned') && !prompt.response?.includes('Not mentioned')
+    prompt.response?.toLowerCase().includes('mentioned') && !prompt.response?.toLowerCase().includes('not mentioned')
   ).length;
 
   return (
@@ -299,8 +299,8 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
           <CardContent>
             <div className="space-y-4">
               {results.testPrompts.map((prompt, index) => {
-                const isMentioned = prompt.response?.includes('Mentioned') && 
-                                  !prompt.response?.includes('Not mentioned');
+                const isMentioned = prompt.response?.toLowerCase().includes('mentioned') && 
+                                  !prompt.response?.toLowerCase().includes('not mentioned');
                 
                 return (
                   <div key={index} className="border rounded-lg p-4 bg-gray-50/50">
