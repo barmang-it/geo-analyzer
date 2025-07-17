@@ -44,21 +44,24 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       
-      const imgWidth = 210;
-      const pageHeight = 295;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
       
+      let heightLeft = imgHeight;
       let position = 0;
       
+      // Add first page
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      heightLeft -= pdfHeight;
       
+      // Add additional pages if needed
       while (heightLeft >= 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+        heightLeft -= pdfHeight;
       }
       
       pdf.save(`${scanData.businessName}_GEO_Report.pdf`);
