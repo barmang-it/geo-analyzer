@@ -1,4 +1,5 @@
 
+import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertTriangle, CheckCircle, Download, Share, RotateCcw, TrendingUp, Target, Globe, Search, MapPin, Building, Tag, Factory, ShoppingCart } from "lucide-react";
 import { ScanData, ScanResults } from "@/pages/Index";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface ResultsViewProps {
   results: ScanResults;
@@ -14,6 +17,7 @@ interface ResultsViewProps {
 }
 
 export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) => {
+  const reportRef = useRef<HTMLDivElement>(null);
   const getScoreColor = (score: number) => {
     if (score >= 8) return "text-green-600";
     if (score >= 6) return "text-yellow-600";
@@ -26,9 +30,41 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
     return "bg-red-100 text-red-800";
   };
 
-  const handleDownloadReport = () => {
-    // In production, this would generate and download a PDF
-    console.log("Downloading report...");
+  const handleDownloadReport = async () => {
+    if (!reportRef.current) return;
+    
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const imgWidth = 210;
+      const pageHeight = 295;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      
+      let position = 0;
+      
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      pdf.save(`${scanData.businessName}_GEO_Report.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    }
   };
 
   const handleShareScore = () => {
@@ -90,7 +126,7 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="container mx-auto px-4 py-8">
+      <div ref={reportRef} className="container mx-auto px-4 py-8">{/* PDF Content Start */}
         {/* Header */}
         <div className="text-center mb-8">
           <Badge className="mb-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2">
