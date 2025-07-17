@@ -34,34 +34,57 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
     if (!reportRef.current) return;
     
     try {
+      // Create PDF with better page handling
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const contentWidth = pdfWidth - (margin * 2);
+      const contentHeight = pdfHeight - (margin * 2);
+      
+      // Capture the entire content
       const canvas = await html2canvas(reportRef.current, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        height: reportRef.current.scrollHeight,
+        windowHeight: reportRef.current.scrollHeight
       });
       
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = contentWidth;
+      const imgHeight = (canvas.height * contentWidth) / canvas.width;
       
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      // Calculate how many pages we need
+      const totalPages = Math.ceil(imgHeight / contentHeight);
       
-      let heightLeft = imgHeight;
-      let position = 0;
-      
-      // Add first page
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
-      
-      // Add additional pages if needed
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
+      for (let page = 0; page < totalPages; page++) {
+        if (page > 0) {
+          pdf.addPage();
+        }
+        
+        // Calculate the y position for this page
+        const yPos = -(page * contentHeight);
+        
+        // Add the image with the correct positioning
+        pdf.addImage(
+          imgData, 
+          'PNG', 
+          margin, 
+          yPos + margin, 
+          imgWidth, 
+          imgHeight
+        );
+        
+        // Add page numbers
+        pdf.setFontSize(10);
+        pdf.setTextColor(128, 128, 128);
+        pdf.text(
+          `Page ${page + 1} of ${totalPages}`, 
+          pdfWidth - margin - 20, 
+          pdfHeight - 5
+        );
       }
       
       pdf.save(`${scanData.businessName}_GEO_Report.pdf`);
