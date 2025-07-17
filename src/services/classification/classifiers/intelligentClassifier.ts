@@ -12,46 +12,66 @@ export const performIntelligentClassification = (
   // Extract geography intelligently
   const geography = extractGeographyHints(businessName, websiteUrl, websiteContent);
   
-  // Industry classification based on content analysis
+  // More granular industry classification
   const industryKeywords = {
-    'Technology': [
-      'software', 'saas', 'platform', 'api', 'cloud', 'developer', 'tech',
-      'artificial intelligence', 'machine learning', 'data', 'analytics',
-      'cybersecurity', 'security', 'firewall', 'encryption', 'cdn',
-      'performance', 'optimization', 'automation', 'integration'
+    'Enterprise Software': [
+      'enterprise software', 'business software', 'crm', 'erp', 'hr software',
+      'accounting software', 'project management', 'business intelligence',
+      'workflow', 'automation', 'saas', 'productivity'
     ],
-    'Healthcare': [
-      'health', 'medical', 'pharma', 'pharmaceutical', 'clinic', 'hospital',
-      'wellness', 'therapy', 'treatment', 'medicine', 'healthcare'
+    'Financial Technology': [
+      'fintech', 'digital banking', 'mobile banking', 'trading platform',
+      'payment processing', 'cryptocurrency', 'blockchain', 'robo advisor',
+      'lending platform', 'neobank', 'digital wallet'
     ],
-    'Financial Services': [
-      'bank', 'banking', 'finance', 'financial', 'payment', 'fintech',
-      'investment', 'insurance', 'credit', 'loan', 'trading'
+    'Digital Healthcare': [
+      'healthtech', 'telemedicine', 'digital health', 'health app',
+      'medical device', 'electronic health records', 'health analytics',
+      'remote monitoring', 'digital therapeutics'
+    ],
+    'Consumer Electronics': [
+      'smartphone', 'laptop', 'tablet', 'gaming', 'wearables',
+      'smart home', 'audio equipment', 'electronics', 'hardware',
+      'mobile devices', 'consumer technology'
+    ],
+    'Automotive Technology': [
+      'electric vehicle', 'autonomous driving', 'automotive software',
+      'connected car', 'mobility', 'transportation technology',
+      'vehicle manufacturing', 'ev charging'
     ],
     'Food & Beverage': [
-      'food', 'beverage', 'drink', 'restaurant', 'snack', 'nutrition',
-      'soda', 'juice', 'water', 'coffee', 'tea', 'dairy', 'soft drink'
+      'beverage company', 'soft drinks', 'energy drinks', 'juice',
+      'water', 'soda', 'coffee', 'food brand', 'restaurant chain',
+      'consumer packaged goods', 'snacks'
     ],
-    'Automotive': [
-      'auto', 'automotive', 'car', 'vehicle', 'electric vehicle',
-      'transportation', 'mobility', 'manufacturing'
+    'Energy & Utilities': [
+      'renewable energy', 'solar', 'wind', 'utilities', 'power',
+      'electricity', 'energy storage', 'grid', 'oil', 'gas'
     ],
-    'Energy': [
-      'energy', 'oil', 'gas', 'renewable', 'solar', 'wind', 'utilities',
-      'power', 'electricity', 'petroleum'
+    'E-commerce': [
+      'online marketplace', 'e-commerce platform', 'online retail',
+      'digital commerce', 'marketplace', 'online shopping',
+      'e-commerce software', 'dropshipping'
     ],
-    'Retail': [
-      'retail', 'shop', 'store', 'ecommerce', 'marketplace', 'buy',
-      'sell', 'consumer', 'shopping'
+    'Cybersecurity': [
+      'cybersecurity', 'security software', 'endpoint protection',
+      'network security', 'threat detection', 'identity management',
+      'security platform', 'firewall', 'antivirus'
     ],
-    'Conglomerate': [
-      'holdings', 'group', 'corporation', 'industries', 'conglomerate',
-      'diversified', 'multinational corporation', 'enterprise group'
+    'Cloud Infrastructure': [
+      'cloud computing', 'cloud platform', 'infrastructure as a service',
+      'platform as a service', 'cloud hosting', 'serverless',
+      'container', 'devops', 'cloud storage'
+    ],
+    'AI & Machine Learning': [
+      'artificial intelligence', 'machine learning', 'deep learning',
+      'neural networks', 'computer vision', 'natural language processing',
+      'ai platform', 'ml platform'
     ]
   };
   
   // Calculate industry scores
-  let bestIndustry = 'Technology';
+  let bestIndustry = 'Enterprise Software';
   let maxMatches = 0;
   
   for (const [industry, keywords] of Object.entries(industryKeywords)) {
@@ -62,97 +82,115 @@ export const performIntelligentClassification = (
     }
   }
   
-  // Market classification based on industry and content
+  // More specific market classification
   const getMarket = (industry: string): string => {
     switch (industry) {
-      case 'Technology':
-        // Major enterprise software companies
-        const enterpriseCompanies = [
-          'microsoft', 'oracle', 'salesforce', 'adobe', 'sap', 'ibm', 'vmware',
-          'servicenow', 'workday', 'tableau', 'splunk', 'atlassian', 'slack',
-          'zoom', 'docusign', 'hubspot', 'zendesk', 'twilio', 'okta'
-        ];
-        
-        if (enterpriseCompanies.some(company => fullText.includes(company))) {
-          return 'Enterprise Software';
-        }
-        
-        if (fullText.includes('enterprise') || fullText.includes('b2b')) return 'Enterprise Software';
-        if (fullText.includes('consumer') || fullText.includes('mobile')) return 'Consumer Electronics';
-        if (fullText.includes('cloud') || fullText.includes('infrastructure')) return 'Cloud Infrastructure';
-        return 'B2B SaaS';
-      case 'Food & Beverage':
-        return 'Consumer Packaged Goods';
-      case 'Healthcare':
+      case 'Enterprise Software':
+        if (fullText.includes('accounting') || fullText.includes('invoice')) return 'Accounting Software';
+        if (fullText.includes('crm') || fullText.includes('customer')) return 'Customer Relationship Management';
+        if (fullText.includes('hr') || fullText.includes('human resources')) return 'Human Resources';
+        if (fullText.includes('project') || fullText.includes('collaboration')) return 'Project Management';
+        return 'SaaS Tools';
+      case 'Financial Technology':
+        if (fullText.includes('trading') || fullText.includes('investment')) return 'Trading Platforms';
+        if (fullText.includes('banking') || fullText.includes('neobank')) return 'Digital Banking';
+        if (fullText.includes('payment') || fullText.includes('transfer')) return 'Payment Processing';
+        if (fullText.includes('lending') || fullText.includes('loan')) return 'Digital Lending';
+        return 'Financial Services';
+      case 'Digital Healthcare':
+        if (fullText.includes('telemedicine') || fullText.includes('telehealth')) return 'Telemedicine';
+        if (fullText.includes('device') || fullText.includes('monitoring')) return 'Medical Devices';
+        if (fullText.includes('records') || fullText.includes('ehr')) return 'Health Records';
         return 'Digital Health';
-      case 'Financial Services':
-        return 'Banking & Fintech';
-      case 'Automotive':
-        return fullText.includes('electric') ? 'Electric Vehicles' : 'Auto Manufacturing';
-      case 'Energy':
-        return 'Energy & Utilities';
-      case 'Retail':
-        return 'E-commerce';
-      case 'Conglomerate':
-        return 'Multi-Industry';
+      case 'Consumer Electronics':
+        if (fullText.includes('mobile') || fullText.includes('smartphone')) return 'Mobile Devices';
+        if (fullText.includes('computer') || fullText.includes('laptop')) return 'Computing Hardware';
+        if (fullText.includes('gaming') || fullText.includes('console')) return 'Gaming Hardware';
+        return 'Consumer Technology';
+      case 'Food & Beverage':
+        if (fullText.includes('beverage') || fullText.includes('drink')) return 'Beverage Products';
+        if (fullText.includes('restaurant') || fullText.includes('food service')) return 'Food Service';
+        return 'Consumer Food Products';
+      case 'Cybersecurity':
+        if (fullText.includes('endpoint') || fullText.includes('antivirus')) return 'Endpoint Security';
+        if (fullText.includes('network') || fullText.includes('firewall')) return 'Network Security';
+        if (fullText.includes('cloud security')) return 'Cloud Security';
+        return 'Cybersecurity Solutions';
+      case 'Cloud Infrastructure':
+        if (fullText.includes('hosting') || fullText.includes('server')) return 'Cloud Hosting';
+        if (fullText.includes('platform') || fullText.includes('paas')) return 'Platform as a Service';
+        if (fullText.includes('infrastructure')) return 'Infrastructure as a Service';
+        return 'Cloud Services';
+      case 'E-commerce':
+        if (fullText.includes('marketplace') || fullText.includes('platform')) return 'Marketplace Platforms';
+        if (fullText.includes('retail') || fullText.includes('shopping')) return 'Online Retail';
+        return 'E-commerce Solutions';
       default:
-        return 'Professional Services';
+        return 'Other';
     }
   };
   
-  // Category classification based on business size and scope
+  // More specific category classification based on company size and public status
   const getCategory = (industry: string, geography: string): string => {
-    // Global companies are typically Enterprise level
-    if (geography === 'Global') return 'Enterprise';
+    // Check for Fortune 500 indicators
+    const fortune500Keywords = ['fortune 500', 'fortune500', 'largest companies', 'major corporation'];
+    if (fortune500Keywords.some(keyword => fullText.includes(keyword))) return 'Fortune 500';
     
-    // Industry-specific category determination
-    switch (industry) {
-      case 'Technology':
-        if (fullText.includes('startup') || fullText.includes('small')) return 'SMB';
-        if (fullText.includes('enterprise') || fullText.includes('corporation')) return 'Enterprise';
-        return 'Mid-Market';
-      case 'Conglomerate':
-        return 'Enterprise';
-      case 'Healthcare':
-      case 'Financial Services':
-      case 'Energy':
-        return fullText.includes('local') || fullText.includes('regional') ? 'SMB' : 'Mid-Market';
-      default:
-        return 'SMB';
+    // Check for public company indicators
+    const publicCompanyKeywords = ['nasdaq', 'nyse', 'stock exchange', 'publicly traded', 'ticker symbol', 'shares'];
+    if (publicCompanyKeywords.some(keyword => fullText.includes(keyword))) return 'Public Company';
+    
+    // Check for unicorn startup indicators
+    const unicornKeywords = ['unicorn', 'billion valuation', 'startup valued'];
+    if (unicornKeywords.some(keyword => fullText.includes(keyword))) return 'Unicorn Startup';
+    
+    // Global companies are typically larger
+    if (geography === 'Global') {
+      return fullText.includes('startup') ? 'Unicorn Startup' : 'Public Company';
     }
+    
+    // Size-based determination
+    if (fullText.includes('enterprise') || fullText.includes('large corporation')) return 'Public Company';
+    if (fullText.includes('startup') || fullText.includes('founded')) return 'Unicorn Startup';
+    if (fullText.includes('small business') || fullText.includes('local')) return 'Small Business';
+    
+    return 'Mid-Market';
   };
   
-  // Domain classification
+  // More specific domain classification aligned with market
   const getDomain = (industry: string, market: string): string => {
-    if (industry === 'Technology') {
-      // Major enterprise software companies
-      const enterpriseCompanies = [
-        'microsoft', 'oracle', 'salesforce', 'adobe', 'sap', 'ibm', 'vmware',
-        'servicenow', 'workday', 'tableau', 'splunk', 'atlassian', 'slack',
-        'zoom', 'docusign', 'hubspot', 'zendesk', 'twilio', 'okta'
-      ];
-      
-      if (enterpriseCompanies.some(company => fullText.includes(company))) {
-        return 'Enterprise Software';
-      }
-      
-      if (fullText.includes('security') || fullText.includes('cyber')) return 'Cybersecurity & Performance';
-      if (fullText.includes('performance') || fullText.includes('cdn')) return 'Performance & CDN';
-      if (market === 'Enterprise Software') return 'Enterprise Software';
-      if (market === 'Consumer Electronics') return 'Consumer Electronics';
-      if (market === 'Cloud Infrastructure') return 'Cloud & Infrastructure';
-      return 'Software Solutions';
+    // Direct mapping from market to domain for specificity
+    switch (market) {
+      case 'Accounting Software': return 'Accounting Software';
+      case 'Customer Relationship Management': return 'CRM Platforms';
+      case 'Trading Platforms': return 'Trading Platforms';
+      case 'Digital Banking': return 'Digital Banking';
+      case 'Telemedicine': return 'Telemedicine Platforms';
+      case 'Medical Devices': return 'Medical Devices';
+      case 'Mobile Devices': return 'Mobile Devices';
+      case 'Computing Hardware': return 'Computing Hardware';
+      case 'Beverage Products': return 'Beverage Brands';
+      case 'Food Service': return 'Food Service';
+      case 'Endpoint Security': return 'Security Solutions';
+      case 'Network Security': return 'Security Solutions';
+      case 'Cloud Hosting': return 'Cloud Infrastructure';
+      case 'Platform as a Service': return 'Cloud Infrastructure';
+      case 'Marketplace Platforms': return 'Marketplace Platforms';
+      case 'Online Retail': return 'E-commerce Platforms';
+      default:
+        // Fallback to industry-based domain
+        switch (industry) {
+          case 'Enterprise Software': return 'SaaS Tools';
+          case 'Financial Technology': return 'Fintech Solutions';
+          case 'Digital Healthcare': return 'Digital Health';
+          case 'Consumer Electronics': return 'Consumer Technology';
+          case 'Food & Beverage': return 'Consumer Products';
+          case 'Cybersecurity': return 'Security Solutions';
+          case 'Cloud Infrastructure': return 'Cloud Infrastructure';
+          case 'E-commerce': return 'E-commerce Platforms';
+          default: return 'Other';
+        }
     }
-    
-    if (industry === 'Food & Beverage') return 'Global Beverage Brand';
-    if (industry === 'Conglomerate') return 'Diversified Conglomerate';
-    if (industry === 'Healthcare') return 'Healthcare';
-    if (industry === 'Financial Services') return 'Financial Services';
-    if (industry === 'Automotive') return 'Automotive Technology';
-    if (industry === 'Energy') return 'Energy';
-    if (industry === 'Retail') return 'E-commerce';
-    
-    return 'Professional Services';
   };
   
   const market = getMarket(bestIndustry);

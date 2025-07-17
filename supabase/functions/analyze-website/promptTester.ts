@@ -2,6 +2,7 @@
 import { classifyBusinessWithLLM } from './businessClassifier.ts';
 import { callOpenAI } from './utils/openaiClient.ts';
 import { detectBusinessMention } from './utils/mentionDetector.ts';
+import { generateSpecificIndustryPrompts } from './domainPrompts/specificIndustryPrompts.ts';
 import { TestPrompt, BusinessClassification } from './types.ts';
 
 export async function testPromptsInParallel(businessName: string, websiteUrl: string): Promise<TestPrompt[]> {
@@ -17,9 +18,15 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
   const classification = await classifyBusinessWithLLM(businessName, websiteUrl);
   console.log(`Classification result:`, classification);
   
-  // Generate dynamic prompts using ChatGPT
-  const prompts = await generateDynamicPrompts(classification, businessName, openaiKey);
-  console.log(`Generated ${prompts.length} dynamic prompts for testing`);
+  // Generate industry-specific prompts
+  const prompts = generateSpecificIndustryPrompts(
+    classification.industry,
+    classification.market,
+    classification.geography,
+    classification.category,
+    classification.domain
+  );
+  console.log(`Generated ${prompts.length} industry-specific prompts for testing`);
 
   // Test all prompts with proper error handling and longer timeout
   const testPromises = prompts.map(async (prompt, index) => {
@@ -67,129 +74,4 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
   return finalResults;
 }
 
-async function generateDynamicPrompts(
-  classification: BusinessClassification, 
-  businessName: string,
-  openaiKey: string
-): Promise<TestPrompt[]> {
-  const { industry, market, geography, domain, category } = classification;
-  const geoText = geography === 'Global' ? 'worldwide' : `in ${geography}`;
-
-  const prompt = `Generate exactly 7 test prompts that would naturally mention leading companies in this business space WITHOUT explicitly naming any specific company. These are questions people might genuinely ask about the industry.
-
-Business Classification:
-- Industry: ${industry}
-- Market: ${market}
-- Geography: ${geography}
-- Domain: ${domain}
-- Category: ${category}
-
-Create generic industry questions that would naturally result in mentioning top companies in this space. The prompts should be:
-1. Generic questions about the industry/market (NO company names mentioned)
-2. Questions about "top companies", "leading brands", "best providers" etc.
-3. Geographically appropriate (${geoText})
-4. Industry-specific and contextual
-5. Varied in approach (market leaders, recommendations, comparisons, innovations, etc.)
-
-Examples of GOOD prompts:
-- "What are the top 10 retail chains in the US?"
-- "Which companies lead the cloud computing market?"
-- "What are the best food delivery apps available?"
-
-Examples of BAD prompts (avoid these):
-- "Who are Walmart's competitors?" (mentions specific company)
-- "How does Amazon compare to..." (mentions specific company)
-
-Return ONLY a JSON array with this exact format:
-[
-  {"type": "Brief descriptive name", "prompt": "The actual question/prompt"},
-  {"type": "Brief descriptive name", "prompt": "The actual question/prompt"},
-  ...
-]
-
-Make sure each prompt type name is brief (2-3 words) and each prompt is a natural question that would organically mention leading companies in this space.`;
-
-  try {
-    console.log('Generating dynamic prompts using ChatGPT...');
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert at generating test prompts for business analysis. You understand different industries and markets. Always return valid JSON arrays only.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 800,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices[0].message.content;
-
-    console.log('Generated dynamic prompts content:', content);
-
-    // Parse the JSON response
-    const prompts = JSON.parse(content);
-    
-    // Validate and ensure proper format
-    if (!Array.isArray(prompts) || prompts.length !== 7) {
-      throw new Error('Invalid prompt format from ChatGPT');
-    }
-    
-    return prompts.map((p: any) => ({
-      type: p.type || 'Generated Prompt',
-      prompt: p.prompt || 'What are leading companies in this industry?'
-    }));
-
-  } catch (error) {
-    console.error('Failed to generate dynamic prompts:', error);
-    
-    // Fallback to basic prompts
-    return [
-      {
-        type: "Industry Leaders",
-        prompt: `What are the top companies in the ${industry.toLowerCase()} industry ${geoText}?`
-      },
-      {
-        type: "Market Analysis",
-        prompt: `Which companies dominate the ${market.toLowerCase()} market ${geoText}?`
-      },
-      {
-        type: "Business Solutions",
-        prompt: `What are the best ${domain.toLowerCase()} solutions available ${geoText}?`
-      },
-      {
-        type: "Competitive Landscape",
-        prompt: `Who are the main competitors in ${industry.toLowerCase()} ${geoText}?`
-      },
-      {
-        type: "Industry Innovation",
-        prompt: `Which companies are leading innovation in ${industry.toLowerCase()} ${geoText}?`
-      },
-      {
-        type: "Service Providers",
-        prompt: `What companies provide ${domain.toLowerCase()} services ${geoText}?`
-      },
-      {
-        type: "Market Recommendations",
-        prompt: `Recommend top ${industry.toLowerCase()} companies for ${market.toLowerCase()} ${geoText}.`
-      }
-    ];
-  }
-}
+// Removed the old dynamic prompts function - now using industry-specific prompts

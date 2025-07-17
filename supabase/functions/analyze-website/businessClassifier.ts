@@ -69,10 +69,11 @@ INDUSTRY CLASSIFICATION RULES:
 
 Return JSON only:
 {
-  "industry": "Technology OR Healthcare OR Finance OR Retail OR Energy OR Automotive OR Food & Beverage OR Conglomerate OR Other",
-  "market": "Cloud Infrastructure OR B2B SaaS OR E-commerce OR Retail & Consumer OR Consumer OR Enterprise OR Cybersecurity OR Multi-Industry OR Consumer Packaged Goods OR Consumer Electronics OR Other", 
-  "geography": "Global OR US OR EU OR Asia OR Other",
-  "domain": "Cybersecurity & Performance OR Performance & CDN OR Software Solutions OR Consumer Electronics OR Financial Services OR Healthcare OR E-commerce OR Retail Operations OR Professional Services OR Diversified Conglomerate OR Consumer Products OR Enterprise Software OR Cloud & Infrastructure OR Other"
+  "industry": "Enterprise Software OR Financial Technology OR Digital Healthcare OR Consumer Electronics OR Automotive Technology OR Food & Beverage OR Energy & Utilities OR E-commerce OR Professional Services OR Media & Entertainment OR Cybersecurity OR Cloud Infrastructure OR AI & Machine Learning OR Other",
+  "market": "Enterprise Resource Planning OR Customer Relationship Management OR Digital Banking OR Investment Management OR Telemedicine OR Medical Devices OR Consumer Electronics OR Electric Vehicles OR CPG Beverages OR Energy Trading OR Online Retail OR B2B Marketplace OR Digital Marketing OR Cybersecurity Solutions OR Cloud Services OR Developer Tools OR Other", 
+  "geography": "Global OR North America OR Europe OR Asia Pacific OR Latin America OR Africa OR Other",
+  "category": "Fortune 500 OR Public Company OR Unicorn Startup OR Mid-Market OR Small Business OR Government OR Non-Profit OR Other",
+  "domain": "Accounting Software OR CRM Platforms OR Trading Platforms OR Digital Health OR Mobile Devices OR Automotive Software OR Beverage Brands OR Renewable Energy OR Marketplace Platforms OR SaaS Tools OR Security Solutions OR Cloud Infrastructure OR AI Platforms OR Other"
 }`;
 
   const controller = new AbortController();
@@ -122,10 +123,11 @@ Return JSON only:
     console.log('LLM Classification result:', result);
     
     return {
-      industry: result.industry || 'Technology',
-      market: result.market || 'B2B SaaS',
-      geography: result.geography || 'US',
-      domain: result.domain || 'Software Solutions'
+      industry: result.industry || 'Enterprise Software',
+      market: result.market || 'SaaS Tools',
+      geography: result.geography || 'North America',
+      category: result.category || 'Mid-Market',
+      domain: result.domain || 'SaaS Tools'
     }
   } catch (error) {
     clearTimeout(timeoutId);
