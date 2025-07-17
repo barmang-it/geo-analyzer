@@ -69,11 +69,11 @@ INDUSTRY CLASSIFICATION RULES:
 
 Return JSON only:
 {
-  "industry": "Enterprise Software OR Financial Technology OR Digital Healthcare OR Consumer Electronics OR Automotive Technology OR Food & Beverage OR Energy & Utilities OR E-commerce OR Professional Services OR Media & Entertainment OR Cybersecurity OR Cloud Infrastructure OR AI & Machine Learning OR Other",
-  "market": "Enterprise Resource Planning OR Customer Relationship Management OR Digital Banking OR Investment Management OR Telemedicine OR Medical Devices OR Consumer Electronics OR Electric Vehicles OR CPG Beverages OR Energy Trading OR Online Retail OR B2B Marketplace OR Digital Marketing OR Cybersecurity Solutions OR Cloud Services OR Developer Tools OR Other", 
+  "industry": "CDN & Edge Computing OR Enterprise Software OR Database & Analytics OR Developer Tools OR Financial Technology OR Digital Healthcare OR Consumer Electronics OR Automotive Technology OR Food & Beverage OR Energy & Utilities OR E-commerce OR Cybersecurity OR Cloud Infrastructure OR Network Infrastructure OR AI & Machine Learning OR Other",
+  "market": "Content Delivery OR Edge Security OR Web Performance OR Media Delivery OR SaaS Tools OR Data Warehousing OR Business Intelligence OR Database Management OR API Management OR Development Platforms OR Digital Banking OR Trading Platforms OR Payment Processing OR Telemedicine OR Medical Devices OR Mobile Devices OR Computing Hardware OR Beverage Products OR Energy Trading OR Marketplace Platforms OR Online Retail OR Cybersecurity Solutions OR Cloud Services OR Network Services OR Other", 
   "geography": "Global OR North America OR Europe OR Asia Pacific OR Latin America OR Africa OR Other",
   "category": "Fortune 500 OR Public Company OR Unicorn Startup OR Mid-Market OR Small Business OR Government OR Non-Profit OR Other",
-  "domain": "Accounting Software OR CRM Platforms OR Trading Platforms OR Digital Health OR Mobile Devices OR Automotive Software OR Beverage Brands OR Renewable Energy OR Marketplace Platforms OR SaaS Tools OR Security Solutions OR Cloud Infrastructure OR AI Platforms OR Other"
+  "domain": "CDN Services OR Edge Security OR Performance Optimization OR Media CDN OR SaaS Tools OR Data Solutions OR BI Platforms OR API Platforms OR Developer Tools OR Fintech Solutions OR Trading Platforms OR Digital Banking OR Telemedicine Platforms OR Medical Devices OR Mobile Devices OR Computing Hardware OR Beverage Brands OR Energy Solutions OR Marketplace Platforms OR E-commerce Platforms OR Security Solutions OR Cloud Infrastructure OR Network Services OR Other"
 }`;
 
   const controller = new AbortController();

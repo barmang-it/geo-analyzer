@@ -12,12 +12,28 @@ export const performIntelligentClassification = (
   // Extract geography intelligently
   const geography = extractGeographyHints(businessName, websiteUrl, websiteContent);
   
-  // More granular industry classification
+  // More granular industry classification with specific tech subcategories
   const industryKeywords = {
+    'CDN & Edge Computing': [
+      'content delivery network', 'cdn', 'edge computing', 'edge servers',
+      'content acceleration', 'web performance', 'akamai', 'cloudflare',
+      'global delivery', 'edge infrastructure', 'performance optimization',
+      'web acceleration', 'ddos protection', 'edge security'
+    ],
     'Enterprise Software': [
       'enterprise software', 'business software', 'crm', 'erp', 'hr software',
       'accounting software', 'project management', 'business intelligence',
       'workflow', 'automation', 'saas', 'productivity'
+    ],
+    'Database & Analytics': [
+      'database', 'data warehouse', 'big data', 'analytics platform',
+      'business intelligence', 'data management', 'mongodb', 'oracle',
+      'sql', 'nosql', 'data science', 'etl', 'data pipeline'
+    ],
+    'Developer Tools': [
+      'developer tools', 'api management', 'version control', 'ci/cd',
+      'code repository', 'github', 'gitlab', 'devops platform',
+      'testing tools', 'monitoring tools', 'observability'
     ],
     'Financial Technology': [
       'fintech', 'digital banking', 'mobile banking', 'trading platform',
@@ -67,6 +83,11 @@ export const performIntelligentClassification = (
       'artificial intelligence', 'machine learning', 'deep learning',
       'neural networks', 'computer vision', 'natural language processing',
       'ai platform', 'ml platform'
+    ],
+    'Network Infrastructure': [
+      'network infrastructure', 'internet backbone', 'fiber optic',
+      'telecommunications', 'isp', 'internet service provider',
+      'networking equipment', 'routers', 'switches'
     ]
   };
   
@@ -85,12 +106,27 @@ export const performIntelligentClassification = (
   // More specific market classification
   const getMarket = (industry: string): string => {
     switch (industry) {
+      case 'CDN & Edge Computing':
+        if (fullText.includes('ddos') || fullText.includes('security')) return 'Edge Security';
+        if (fullText.includes('performance') || fullText.includes('acceleration')) return 'Web Performance';
+        if (fullText.includes('streaming') || fullText.includes('video')) return 'Media Delivery';
+        return 'Content Delivery';
       case 'Enterprise Software':
         if (fullText.includes('accounting') || fullText.includes('invoice')) return 'Accounting Software';
         if (fullText.includes('crm') || fullText.includes('customer')) return 'Customer Relationship Management';
         if (fullText.includes('hr') || fullText.includes('human resources')) return 'Human Resources';
         if (fullText.includes('project') || fullText.includes('collaboration')) return 'Project Management';
         return 'SaaS Tools';
+      case 'Database & Analytics':
+        if (fullText.includes('warehouse') || fullText.includes('big data')) return 'Data Warehousing';
+        if (fullText.includes('analytics') || fullText.includes('intelligence')) return 'Business Intelligence';
+        if (fullText.includes('mongodb') || fullText.includes('nosql')) return 'NoSQL Databases';
+        return 'Database Management';
+      case 'Developer Tools':
+        if (fullText.includes('api') || fullText.includes('integration')) return 'API Management';
+        if (fullText.includes('version control') || fullText.includes('git')) return 'Version Control';
+        if (fullText.includes('monitoring') || fullText.includes('observability')) return 'Application Monitoring';
+        return 'Development Platforms';
       case 'Financial Technology':
         if (fullText.includes('trading') || fullText.includes('investment')) return 'Trading Platforms';
         if (fullText.includes('banking') || fullText.includes('neobank')) return 'Digital Banking';
@@ -121,6 +157,11 @@ export const performIntelligentClassification = (
         if (fullText.includes('platform') || fullText.includes('paas')) return 'Platform as a Service';
         if (fullText.includes('infrastructure')) return 'Infrastructure as a Service';
         return 'Cloud Services';
+      case 'Network Infrastructure':
+        if (fullText.includes('fiber') || fullText.includes('backbone')) return 'Internet Backbone';
+        if (fullText.includes('isp') || fullText.includes('internet service')) return 'Internet Service Provider';
+        if (fullText.includes('equipment') || fullText.includes('hardware')) return 'Networking Equipment';
+        return 'Network Services';
       case 'E-commerce':
         if (fullText.includes('marketplace') || fullText.includes('platform')) return 'Marketplace Platforms';
         if (fullText.includes('retail') || fullText.includes('shopping')) return 'Online Retail';
@@ -161,10 +202,37 @@ export const performIntelligentClassification = (
   const getDomain = (industry: string, market: string): string => {
     // Direct mapping from market to domain for specificity
     switch (market) {
+      // CDN & Edge Computing domains
+      case 'Content Delivery': return 'CDN Services';
+      case 'Edge Security': return 'Edge Security';
+      case 'Web Performance': return 'Performance Optimization';
+      case 'Media Delivery': return 'Media CDN';
+      
+      // Enterprise Software domains
       case 'Accounting Software': return 'Accounting Software';
       case 'Customer Relationship Management': return 'CRM Platforms';
+      case 'Human Resources': return 'HR Software';
+      case 'Project Management': return 'Project Management';
+      
+      // Database & Analytics domains
+      case 'Data Warehousing': return 'Data Warehousing';
+      case 'Business Intelligence': return 'BI Platforms';
+      case 'NoSQL Databases': return 'NoSQL Databases';
+      case 'Database Management': return 'Database Solutions';
+      
+      // Developer Tools domains
+      case 'API Management': return 'API Platforms';
+      case 'Version Control': return 'Code Management';
+      case 'Application Monitoring': return 'DevOps Tools';
+      case 'Development Platforms': return 'Developer Platforms';
+      
+      // Financial Technology domains
       case 'Trading Platforms': return 'Trading Platforms';
       case 'Digital Banking': return 'Digital Banking';
+      case 'Payment Processing': return 'Payment Solutions';
+      case 'Digital Lending': return 'Lending Platforms';
+      
+      // Other existing domains
       case 'Telemedicine': return 'Telemedicine Platforms';
       case 'Medical Devices': return 'Medical Devices';
       case 'Mobile Devices': return 'Mobile Devices';
@@ -173,20 +241,30 @@ export const performIntelligentClassification = (
       case 'Food Service': return 'Food Service';
       case 'Endpoint Security': return 'Security Solutions';
       case 'Network Security': return 'Security Solutions';
+      case 'Cloud Security': return 'Security Solutions';
       case 'Cloud Hosting': return 'Cloud Infrastructure';
       case 'Platform as a Service': return 'Cloud Infrastructure';
+      case 'Infrastructure as a Service': return 'Cloud Infrastructure';
+      case 'Internet Backbone': return 'Network Infrastructure';
+      case 'Internet Service Provider': return 'ISP Services';
+      case 'Networking Equipment': return 'Network Hardware';
       case 'Marketplace Platforms': return 'Marketplace Platforms';
       case 'Online Retail': return 'E-commerce Platforms';
+      
       default:
         // Fallback to industry-based domain
         switch (industry) {
+          case 'CDN & Edge Computing': return 'CDN Services';
           case 'Enterprise Software': return 'SaaS Tools';
+          case 'Database & Analytics': return 'Data Solutions';
+          case 'Developer Tools': return 'Developer Tools';
           case 'Financial Technology': return 'Fintech Solutions';
           case 'Digital Healthcare': return 'Digital Health';
           case 'Consumer Electronics': return 'Consumer Technology';
           case 'Food & Beverage': return 'Consumer Products';
           case 'Cybersecurity': return 'Security Solutions';
           case 'Cloud Infrastructure': return 'Cloud Infrastructure';
+          case 'Network Infrastructure': return 'Network Services';
           case 'E-commerce': return 'E-commerce Platforms';
           default: return 'Other';
         }
