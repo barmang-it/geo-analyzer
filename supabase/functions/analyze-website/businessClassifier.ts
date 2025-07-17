@@ -42,37 +42,50 @@ export async function classifyBusinessWithLLM(
     }
   }
 
-  const prompt = `Analyze this business using the provided website content and classify it accurately:
+  const prompt = `Analyze this business using the provided website content and classify it dynamically and granularly:
 
 ${contextInfo}
 
-Based on the actual website content above, classify this business. Pay special attention to:
+Based on the actual website content above, classify this business with maximum granularity. Pay special attention to:
 - What services/products they actually offer (from website content)
-- Industry-specific terminology in their content
-- Their target market and geography
-- Technical capabilities mentioned
-- Global presence indicators (international offices, worldwide operations, stock exchanges, etc.)
+- Industry-specific terminology and technical capabilities
+- Their precise target market and customer base
+- Geographic presence and service areas
+- Business model and revenue streams
+- Specific niches within broader industries
 
-CRITICAL GEOGRAPHY CLASSIFICATION:
-- Look for indicators of global presence: "international", "worldwide", "global", "offices in multiple countries", "publicly traded", "fortune 500", "nasdaq", "nyse", stock exchanges
-- Major corporations with international presence should be classified as "Global"
-- Only classify as "US" if the business is clearly US-only with no international presence
-- Consider domain extensions (.com doesn't automatically mean US-only)
-- Look for subsidiary offices, international operations, or global customer base
+GEOGRAPHY CLASSIFICATION - BE VERY GRANULAR:
+- For LOCAL businesses: Include city, state/province, and country (e.g., "Toronto, Ontario, Canada" or "Austin, Texas, USA")
+- For REGIONAL businesses: Include region and country (e.g., "Western Canada", "Northeast USA", "Southern Europe")
+- For NATIONAL businesses: Include the specific country (e.g., "United States", "Germany", "Australia")
+- For GLOBAL businesses: Look for indicators like international offices, worldwide operations, stock exchanges, multiple country operations
+- Use website content evidence: addresses, "serving X region", "offices in", "available in countries"
+
+DOMAIN CLASSIFICATION - BE HIGHLY SPECIFIC:
+- Don't use generic terms - be as specific as possible based on website content
+- Examples: "Cybersecurity Software" not "Software", "Dental Services" not "Healthcare", "Electric Vehicle Charging" not "Energy"
+- Focus on the primary value proposition and core business offering
+- Use industry-specific terminology found on their website
+
+INDUSTRY CLASSIFICATION - DYNAMIC AND SPECIFIC:
+- Create precise industry classifications based on actual business activities
+- Don't limit to predefined categories - create new ones as needed
+- Examples: "Artificial Intelligence & Machine Learning", "Quantum Computing", "Sustainable Energy Storage", "Digital Health Platforms"
 
 CLASSIFICATION INSTRUCTIONS:
-1. Analyze the website content to understand what the business actually does
-2. Focus on the primary products, services, and business model described on the website
-3. Use the website content to determine the most accurate industry, market, and geography classifications
-4. Base your classification entirely on the evidence found in the website content provided
+1. Analyze the website content to understand the exact business model and offerings
+2. Create precise, specific classifications - avoid generic terms
+3. Use the business's own terminology and positioning when possible
+4. For geography, be as specific as the evidence allows
+5. Base everything on concrete evidence from the website content
 
-Return JSON only:
+Return JSON only with dynamic, granular classifications:
 {
-  "industry": "CDN & Edge Computing OR Enterprise Software OR Database & Analytics OR Developer Tools OR Financial Technology OR Digital Healthcare OR Consumer Electronics OR Automotive Technology OR Food & Beverage OR Energy & Utilities OR E-commerce OR Cybersecurity OR Cloud Infrastructure OR Network Infrastructure OR AI & Machine Learning OR Other",
-  "market": "Content Delivery OR Edge Security OR Web Performance OR Media Delivery OR SaaS Tools OR Data Warehousing OR Business Intelligence OR Database Management OR API Management OR Development Platforms OR Digital Banking OR Trading Platforms OR Payment Processing OR Telemedicine OR Medical Devices OR Mobile Devices OR Computing Hardware OR Beverage Products OR Energy Trading OR Marketplace Platforms OR Online Retail OR Cybersecurity Solutions OR Cloud Services OR Network Services OR Other", 
-  "geography": "Global OR North America OR Europe OR Asia Pacific OR Latin America OR Africa OR Other",
-  "category": "Fortune 500 OR Public Company OR Unicorn Startup OR Mid-Market OR Small Business OR Government OR Non-Profit OR Other",
-  "domain": "CDN Services OR Edge Security OR Performance Optimization OR Media CDN OR SaaS Tools OR Data Solutions OR BI Platforms OR API Platforms OR Developer Tools OR Fintech Solutions OR Trading Platforms OR Digital Banking OR Telemedicine Platforms OR Medical Devices OR Mobile Devices OR Computing Hardware OR Beverage Brands OR Energy Solutions OR Marketplace Platforms OR E-commerce Platforms OR Security Solutions OR Cloud Infrastructure OR Network Services OR Other"
+  "industry": "[Create specific industry based on actual business - no predefined limits]",
+  "market": "[Specific target market and customer segment based on website content]", 
+  "geography": "[Granular geographic classification: City, State/Province, Country OR Regional OR National OR Global based on evidence]",
+  "category": "[Business size/type based on evidence: startup, SMB, enterprise, public company, etc.]",
+  "domain": "[Highly specific domain/specialization based on core offerings and website terminology]"
 }`;
 
   const controller = new AbortController();
@@ -87,11 +100,11 @@ Return JSON only:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           {
             role: 'system',
-            content: 'You are a business classification expert. Analyze the provided website content to accurately classify businesses. Focus on what the company actually does based on their website content, not just their name. Pay special attention to geography - look for global presence indicators like international offices, worldwide operations, stock exchanges, subsidiaries. Major corporations should be classified as "Global" if they have international presence. Only classify as "US" if clearly US-only. Respond only with valid JSON.'
+            content: 'You are a business classification expert specializing in dynamic, granular analysis. Create precise, specific classifications based entirely on website content evidence. For geography, be as granular as possible - include city/state/province for local businesses, regions for regional businesses, specific countries for national businesses, and "Global" only when there is clear evidence of international operations. For domains and industries, use the specific terminology found on the website rather than generic categories. Always prioritize precision and specificity over broad generalizations. Respond only with valid JSON.'
           },
           {
             role: 'user',
@@ -131,11 +144,11 @@ Return JSON only:
     console.log('LLM Classification result:', result);
     
     return {
-      industry: result.industry || 'Enterprise Software',
-      market: result.market || 'SaaS Tools',
-      geography: result.geography || 'North America',
-      category: result.category || 'Mid-Market',
-      domain: result.domain || 'SaaS Tools'
+      industry: result.industry || 'Business Services',
+      market: result.market || 'Professional Services',
+      geography: result.geography || 'Not Specified',
+      category: result.category || 'Small to Medium Business',
+      domain: result.domain || 'General Business Services'
     }
   } catch (error) {
     clearTimeout(timeoutId);
