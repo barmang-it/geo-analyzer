@@ -104,7 +104,7 @@ serve(async (req) => {
     let testPrompts;
     try {
       testPrompts = await Promise.race([
-        testPromptsInParallel(safeBusiness, safeUrl),
+        testPromptsInParallel(safeBusiness, safeUrl, classification),
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Prompt testing timeout')), 30000)
         )

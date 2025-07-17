@@ -5,7 +5,7 @@ import { detectBusinessMention } from './utils/mentionDetector.ts';
 import { generateSpecificIndustryPrompts } from './domainPrompts/specificIndustryPrompts.ts';
 import { TestPrompt, BusinessClassification } from './types.ts';
 
-export async function testPromptsInParallel(businessName: string, websiteUrl: string): Promise<TestPrompt[]> {
+export async function testPromptsInParallel(businessName: string, websiteUrl: string, classification: BusinessClassification): Promise<TestPrompt[]> {
   const openaiKey = Deno.env.get('OPENAI_API_KEY');
   if (!openaiKey) {
     console.error('OpenAI API key not configured');
@@ -13,10 +13,7 @@ export async function testPromptsInParallel(businessName: string, websiteUrl: st
   }
 
   console.log(`Testing prompts for business: ${businessName}, website: ${websiteUrl}`);
-
-  // Get classification to generate dynamic prompts
-  const classification = await classifyBusinessWithLLM(businessName, websiteUrl);
-  console.log(`Classification result:`, classification);
+  console.log(`Using provided classification:`, classification);
   
   // Generate industry-specific prompts
   const prompts = generateSpecificIndustryPrompts(
