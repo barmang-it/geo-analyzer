@@ -60,14 +60,11 @@ CRITICAL GEOGRAPHY CLASSIFICATION:
 - Consider domain extensions (.com doesn't automatically mean US-only)
 - Look for subsidiary offices, international operations, or global customer base
 
-INDUSTRY CLASSIFICATION RULES:
-1. Analyze the PRIMARY business model and core products/services offered
-2. Focus on what the company ACTUALLY sells or provides as their main revenue source
-3. Don't classify based on distribution channel alone - focus on the core business
-4. For convenience stores, food retailers, beverage companies: classify as "Food & Beverage" regardless of having physical locations
-5. "Retail" should be for general merchandise retailers, department stores, clothing retailers
-6. Technology companies should be properly subcategorized (enterprise software, consumer electronics, cloud infrastructure, etc.)
-7. E-COMMERCE vs RETAIL: Online-only businesses should be "E-commerce", but focus on what they sell, not just the channel
+CLASSIFICATION INSTRUCTIONS:
+1. Analyze the website content to understand what the business actually does
+2. Focus on the primary products, services, and business model described on the website
+3. Use the website content to determine the most accurate industry, market, and geography classifications
+4. Base your classification entirely on the evidence found in the website content provided
 
 Return JSON only:
 {
