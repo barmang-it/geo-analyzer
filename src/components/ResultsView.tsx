@@ -34,57 +34,152 @@ export const ResultsView = ({ results, scanData, onNewScan }: ResultsViewProps) 
     if (!reportRef.current) return;
     
     try {
-      // Create PDF with better page handling
+      // Use a different approach - break content into logical sections
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      const contentWidth = pdfWidth - (margin * 2);
-      const contentHeight = pdfHeight - (margin * 2);
+      const margin = 15;
+      const maxWidth = pdfWidth - (margin * 2);
       
-      // Capture the entire content
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        height: reportRef.current.scrollHeight,
-        windowHeight: reportRef.current.scrollHeight
+      // Capture each section separately to avoid text cuts
+      const sections = reportRef.current.querySelectorAll('.pdf-section');
+      let currentY = margin;
+      let pageNumber = 1;
+      
+      // Add header
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`${scanData.businessName} GEO Report`, margin, currentY);
+      currentY += 15;
+      
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Analysis for ${scanData.websiteUrl}`, margin, currentY);
+      currentY += 20;
+      
+      // Add GEO Score
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('GEO Score', margin, currentY);
+      currentY += 10;
+      
+      pdf.setFontSize(24);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`${displayScore}/10`, margin, currentY);
+      currentY += 15;
+      
+      // Add benchmark
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Benchmark: ${results.benchmarkScore}/10`, margin, currentY);
+      currentY += 20;
+      
+      // Add business classification
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Business Classification', margin, currentY);
+      currentY += 10;
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Industry: ${results.classification.industry}`, margin, currentY);
+      currentY += 7;
+      pdf.text(`Market: ${results.classification.market}`, margin, currentY);
+      currentY += 7;
+      pdf.text(`Geography: ${results.classification.geography}`, margin, currentY);
+      currentY += 7;
+      pdf.text(`Domain: ${results.classification.domain}`, margin, currentY);
+      currentY += 20;
+      
+      // Check if we need a new page
+      if (currentY > pdfHeight - 60) {
+        pdf.addPage();
+        currentY = margin;
+        pageNumber++;
+      }
+      
+      // Add strengths
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Strengths', margin, currentY);
+      currentY += 10;
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      results.strengths?.forEach((strength) => {
+        const lines = pdf.splitTextToSize(`• ${strength}`, maxWidth);
+        if (currentY + (lines.length * 5) > pdfHeight - 30) {
+          pdf.addPage();
+          currentY = margin;
+          pageNumber++;
+        }
+        pdf.text(lines, margin, currentY);
+        currentY += lines.length * 5 + 3;
       });
       
-      const imgData = canvas.toDataURL('image/png');
-      const imgWidth = contentWidth;
-      const imgHeight = (canvas.height * contentWidth) / canvas.width;
+      currentY += 10;
       
-      // Calculate how many pages we need
-      const totalPages = Math.ceil(imgHeight / contentHeight);
+      // Check if we need a new page
+      if (currentY > pdfHeight - 60) {
+        pdf.addPage();
+        currentY = margin;
+        pageNumber++;
+      }
       
-      for (let page = 0; page < totalPages; page++) {
-        if (page > 0) {
+      // Add areas for improvement
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Areas for Improvement', margin, currentY);
+      currentY += 10;
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      results.gaps?.forEach((gap) => {
+        const lines = pdf.splitTextToSize(`• ${gap}`, maxWidth);
+        if (currentY + (lines.length * 5) > pdfHeight - 30) {
           pdf.addPage();
+          currentY = margin;
+          pageNumber++;
         }
-        
-        // Calculate the y position for this page
-        const yPos = -(page * contentHeight);
-        
-        // Add the image with the correct positioning
-        pdf.addImage(
-          imgData, 
-          'PNG', 
-          margin, 
-          yPos + margin, 
-          imgWidth, 
-          imgHeight
-        );
-        
-        // Add page numbers
-        pdf.setFontSize(10);
+        pdf.text(lines, margin, currentY);
+        currentY += lines.length * 5 + 3;
+      });
+      
+      currentY += 10;
+      
+      // Check if we need a new page
+      if (currentY > pdfHeight - 60) {
+        pdf.addPage();
+        currentY = margin;
+        pageNumber++;
+      }
+      
+      // Add recommendations
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Recommended Actions', margin, currentY);
+      currentY += 10;
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      results.recommendations?.forEach((rec) => {
+        const lines = pdf.splitTextToSize(`• ${rec}`, maxWidth);
+        if (currentY + (lines.length * 5) > pdfHeight - 30) {
+          pdf.addPage();
+          currentY = margin;
+          pageNumber++;
+        }
+        pdf.text(lines, margin, currentY);
+        currentY += lines.length * 5 + 3;
+      });
+      
+      // Add page numbers to all pages
+      const totalPages = pdf.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
         pdf.setTextColor(128, 128, 128);
-        pdf.text(
-          `Page ${page + 1} of ${totalPages}`, 
-          pdfWidth - margin - 20, 
-          pdfHeight - 5
-        );
+        pdf.text(`Page ${i} of ${totalPages}`, pdfWidth - margin - 20, pdfHeight - 10);
       }
       
       pdf.save(`${scanData.businessName}_GEO_Report.pdf`);
