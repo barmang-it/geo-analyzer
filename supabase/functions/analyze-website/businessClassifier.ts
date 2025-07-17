@@ -118,7 +118,16 @@ Return JSON only:
       throw new Error('Invalid OpenAI response')
     }
     
-    const result = JSON.parse(data.choices[0].message.content)
+    let content = data.choices[0].message.content.trim();
+    
+    // Remove markdown code blocks if present
+    if (content.startsWith('```json')) {
+      content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (content.startsWith('```')) {
+      content = content.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+    
+    const result = JSON.parse(content);
     console.log('LLM Classification result:', result);
     
     return {
